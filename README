@@ -1,0 +1,119 @@
+Here we propose a simple method to rank students in a class, based on
+the students' performance on each grade component (homework, etc.)
+
+To illustrate, we provide a program (rank.py) that takes an input CSV
+file like this:
+
+        STU_ID1 ,  H1 ,  H2 ,  H3 ,  Q1 ,  Q2 , Final
+              0 ,   5 ,   5 ,   5 ,  20 ,  20 ,    30
+         X80826 ,   6 ,   8 ,   8 ,  -- ,  80 ,   185
+         X81001 ,   7 ,   7 ,  -- ,  91 ,  74 ,   139
+         X81668 ,   6 ,   6 ,   8 ,  79 ,  93 ,   161
+         X98883 ,  -- ,  10 ,  10 ,  -- ,  81 ,   200
+         X95731 ,   7 ,  10 ,   8 ,  93 , 100 ,   200
+         X96332 ,  -- ,  10 ,  -- ,  98 ,  78 ,   172
+         X88957 ,   8 ,   8 ,   9 ,  91 ,  83 ,   180
+         
+giving a header line, component weights, and student grades
+per component (with missing values, perhaps), and produces
+a rank-ordered student listing like this:
+
+        LISTING OF ALL STUDENTS (BEST FIRST) WITH RAW GRADES:
+        STU_ID1   H1   H2   H3   Q1    Q2  Final  avg_score  rank 
+        X95731     7   10    8   93   100    200      0.748     0 
+        X98883    --   10   10   --    81    200      0.705     1 
+        X88957     8    8    9   91    83    180      0.536     2 
+        X96332    --   10   --   98    78    172      0.489     3 
+        X80826     6    8    8   --    80    185      0.482     4 
+        X81668     6    6    8   79    93    161      0.346     5 
+        X81001     7    7   --   91    74    139      0.234     6 
+ 
+which is the same with two new columns added: the avg_score column, and
+a "rank" column indicating the student's rank in the class.
+
+The method used here works as follows:
+
+  (1) For each component (e.g. each homework, quiz), compute a "raw scorek"
+      for each student, from 1 (for worst) to m (for best) (if there are
+      m students with grades on that component).
+
+      If several students would be tied, then they all receive the
+      same average rank.  For example, if nine students have grades
+              10    9   10   10   4   5    8     9    8
+      then they receive respective raw scores:
+               8  5.5    8    8   1   2  3.5   5.5  3.5
+
+      Missing grades are ignored here; they just reduce the number m.
+
+  (2) These raw scores are scaled to the interval [0,1] by dividing
+      by (m+1), where m is the number of students having a grade for
+      that component.  In the above example, the scaled scores
+      scores) are:
+             0.8  0.55   0.8  0.8 0.1 0.2 0.35  0.55 0.35
+      If all ranks are distinct, then the scaled ranks are:
+             1/(m+1)   2/(m+1)   3/(m+1)  ...   m/(m+1)
+
+  (3) The weighted average score is then computed for each student, and
+      the students are sorted into order of decreasing score.
+
+      Since some scores may be missing, the relevant weights for that
+      student are normalized to sum to 1 before the weighted sum is
+      computed.
+
+See the included files for more documentation, code, etc.:
+
+    README                -- this file
+    USAGE-NOTES.txt       -- discussion on how to use rank.py
+
+    rank.py               -- main program
+    make_data.py          -- generates test CSV files
+    dropper.py            -- if you want to e.g. drop lowest homework scores
+
+    testnnnn.csv                        -- input CSV test data file with nnnn students
+
+    testnnnn.csv.1.grades.rank.csv        -- corresponding output CSV file with grades and
+                                             new rank
+    testnnnn.csv.2.scores.rank.csv        -- same, except grades replaced with scaled scores
+                                             per component
+    testnnnn.csv.3.droppedscores.rank.csv -- same as previous, but with some scores dropped by
+                                             dropper.py, and ranks recomputed
+
+Discussion:
+
+-- An earlier version was based on the use of Kemeny score rankings.
+   While this was technically interesting, it had a number of deficiencies,
+   including complexity.  See the "kemeny" branch of this github repository
+   if you are interested in this.
+
+-- I think the best approach for dealing with exceptions, etc. is
+   to drop the lowest scores for homeworks, etc.  This policy is
+   class-specific, and so isn't implemented here.  But it should
+   presumably be done after the scaled ranks are computed, but
+   before the weighted sums are computed.  A typical policy might
+   be to drop the two lowest homework grades and the lowest quiz
+   grade.  Such a policy provides motivation for the student to do
+   as many of the assignment as they can, since it is unpredictable
+   to them as to which ones they will get the best ranking on.
+   (And note that getting a perfect score on homework #1 can still
+   be bested by a non-perfect score on homework #2, due to effects
+   of missing grades, ties, etc.)  For example, if four students
+   all have perfect 10 scores on problem set #1, then their scaled
+   ranks are all 0.500.  If the same four students get distinct
+   scores on problem set #2, then the scaled scores are:
+                0.2  0.4  0.6  0.8
+   so even the number 2 student (with scaled score 0.6) is doing better
+   here than on problem set #1.
+
+   The module dropper.py allows for implementation of policies to
+   drop e.g. the lowest one or two homework grades, the lowest quiz
+   grade, etc.  This file should be modified to get the desired policy.
+
+-- Because the final score is just a weighted sum, the question as
+   to "what grade do I need to get on the final in order to get a B 
+   for this course" is potentially answerable, if the B/C cutoff point
+   is known already.  The answer, however, is in terms of scaled score...
+   I'm not much in favor of this sort of a dialogue, but some may find
+   it helpful...
+
+Ron Rivest  
+2016-01-09
