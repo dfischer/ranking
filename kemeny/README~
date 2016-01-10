@@ -1,0 +1,64 @@
+Here we explore the notion of "Grading By Voting" (GBV), using
+maximization of the Kemeny-Young score to combine student rankings
+produced from the scores for each grade component.
+
+To illustrate, we provide a program (gbv.py) that takes an input CSV
+file like this:
+
+        STU_ID1 ,  H1 ,  H2 ,  H3 ,  Q1 ,  Q2 , Final
+              0 ,   5 ,   5 ,   5 ,  20 ,  20 ,    30
+         X80826 ,   6 ,   8 ,   8 ,  -- ,  80 ,   185
+         X81001 ,   7 ,   7 ,  -- ,  91 ,  74 ,   139
+         X81668 ,   6 ,   6 ,   8 ,  79 ,  93 ,   161
+         X98883 ,  -- ,  10 ,  10 ,  -- ,  81 ,   200
+         X95731 ,   7 ,  10 ,   8 ,  93 , 100 ,   200
+         X96332 ,  -- ,  10 ,  -- ,  98 ,  78 ,   172
+         X88957 ,   8 ,   8 ,   9 ,  91 ,  83 ,   180
+         
+giving a header line, component weights, and student grades
+per component (with missing values, perhaps), and produces
+a rank-ordered student listing like this:
+
+        LISTING OF ALL STUDENTS (BEST FIRST):
+        
+        STU_ID1    H1    H2    H3    Q1    Q2   Final  GBVrank  gap
+         X95731    7.0  10.0   8.0  93.0 100.0  200.0        0   15
+         X98883     --  10.0  10.0    --  81.0  200.0        1   20
+         X88957    8.0   8.0   9.0  91.0  83.0  180.0        2    0
+         X80826    6.0   8.0   8.0    --  80.0  185.0        3   45
+         X96332     --  10.0    --  98.0  78.0  172.0        4   35
+         X81668    6.0   6.0   8.0  79.0  93.0  161.0        5   20
+         X81001    7.0   7.0    --  91.0  74.0  139.0        6    0
+
+which is the same with two new columns added: the GBV rank column, and
+a "gap" column indicating how much better a student did than the
+following student.
+
+The usual method of producing a student ranking adds weighted versions
+of the scores together, producing a score for each student.  But this
+method involves normalization steps of dubious justification (score
+distribution are seldom normally distributed), and uses weights in a
+way that seems opaque.  (For example, the usual z-score normalization
+seems to require using the square roots of the weights in the linear
+summation.)  Moreover, the presence of missing data makes all of this
+more complex and suspect.
+
+The method proposed here does not normalize and add scores, but rather
+treats each grade component as a preferential ballot (with
+multiplicity equal to the weight), and then uses novel (?)  methods to
+maximize the Kemeny-Young score to produce the final output ordering.
+
+See the included files for more documentation, code, etc.:
+    README                -- this file
+    USAGE-NOTES.txt       -- discussion on how to use gbv.py
+    GBV-NOTES.txt         -- general discussion on the problem and approach
+    gbv.py                -- main program
+    kem.py                -- module for optimizing Kemeny score
+    testnnnn.csv          -- input CSV test data file with nnnn students
+    testnnnn.csv.gbv.csv  -- corresponding output CSV file
+
+As noted, the methods in the kem.py module, particularly the split_merge
+optimization routine based on the use of dynamic programming, may be new.
+
+Ron Rivest
+2016-01-01

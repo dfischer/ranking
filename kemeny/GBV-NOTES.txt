@@ -1,0 +1,233 @@
+Notes on "Grading by Voting"
+Ronald L. Rivest
+December 28, 2015
+
+This note documents some experiments on a new proposal for aggregating
+grades in a class, called "grading by voting" (GBV) and gives sample
+output on some test data files.
+
+The idea is to use voting theory to produce a final student ranking,
+from which the final grades can be determined by drawing cut-offs and
+considering other factors (grade definitions, participation, etc.).
+
+Most grading methods are "score-based"---each student is graded
+(scored) on each component (pset, quiz, final), and a weighted sum of
+scores is computed for each student.  These weighted scores are used
+to produce an ordered list of the students, in order of decreasing
+total weighted score.
+
+This approach has some problems:
+
+(1) Different components have different score distributions.  Although
+    normalization may be used (e.g. using a Students' t-distribution
+    (zscores) by subtracting the mean and dividing by the standard
+    deviation), this procedure isn't well-justified or a good fit for
+    all cases.  For example, if the stdev is small, a student might
+    get a very extreme normalized score, such as -10 !.
+
+(2) We usually need to deal with missing data.  In MIT 6.006 this past
+    term, students could be excused from up to two psets and one quiz,
+    with the weight "moved to the final".
+
+(3) The weights for different components need to be used in a clear
+    way.  For zscore normalization, one should probably use a
+    the square-root of the stated weight targets, as the components
+    should be weighted by variance.  (As suggested by Shalev Ben-David.)
+
+(3) Whatever method is used should be reasonably clear to everyone
+    (staff and students).
+
+(4) We may want to respond (somehow) to a student who asks "What do
+    I need to get on the final in order to get a B for this course?"
+
+(5) We may need to leave a "grading rubric" for a student who misses
+    the final, and takes it later (e.g. in the following term).
+
+We propose here a method based on approaches used in elections based
+on preferential ballots to determine an ordering of the candidates.
+
+We first describe ranked-choice voting methods, and then describe
+its application to grading.
+
+RANKED-CHOICE (aka PREFERENTIAL) VOTING
+
+In a "ranked-choice" (or "preferential") election, each voter submits
+a ballot listing the candidates in order of preference, from
+most-preferred to least-preferred.  This is called a "preferential
+ballot".
+
+In some elections, a voter may be able to specify that some candidates
+are tied.  For example, a ballot may say:
+
+      A > B = D > F > C = E = G
+
+meaning that A is first choice, B and D are tied for voter's second
+choice, F is third choice, and C, E, and G are tied for last place.
+
+A ballot may omit some candidates.  Such a ballot is typically
+interpreted according to the rule: "All missing candidates are
+treated as tied for last place."  
+
+In our case, we prefer to interpret such a ballot as meaning "No
+opinion is expressed regarding the voter's preferences for or against
+the missing candidates, with respect to each other or with respect to
+the candidates listed on the ballot."
+
+A collection of ranked-choice ballots is called a profile.  A profile
+is a multi-set, since several voters may cast identical ballots.
+
+The literature on voting methods contains many (hundreds!) of
+proposals for taking a profile of ballots and determining the winner,
+or determining an ordering of the candidates.
+
+The term "social choice function" is used for a procedure that takes as
+input a profile and produces as output a single winner.
+
+The term "social welfare function" is used for a procedure that takes
+as input a profile and produces as output an ordering of the
+candidates, from "most-preferred by the voters collectively" to "least
+preferred by the voters collectively.
+
+APPLYING RANKED-CHOICE VOTING TO GRADING
+
+In our application, we consider the students to be "candidates", and
+the goal is to produce an ordered listing of the students.
+
+The grading components correspond to the ballots.  For example, the
+final exam be viewed as like a ranked-choice ballot that orders the
+students from best-performing on the final to worst-performing on the
+final.  
+
+Each grading component (pset, quiz, final) thus corresponds to a
+ranked-choice (preferential) ballot.
+
+If a student misses a component, then the corresponding ballot
+just doesn't list that student. (And that ballot expresses no opinion
+on the relative strength of that student.)
+
+If two students have the same score on a grading component, then the
+corresponding ballot for that component ranks those two students as
+equal.
+
+In the above way, each grading component yields a single ranked-choice
+ballot.
+
+We next turn to the question of applying "weights" to the
+grading components.
+
+In MIT 6.006 Fall 2015, we had the following weights:
+  -- psets had weight 5 each (there were six psets)
+  -- quizzes had weight 20 each (there were two quizzes)
+  -- the final exam had weight 30.
+
+We model weights in our voting as follows: a grading component with
+weight w will contribute w ballots to the profile.  These ballots are
+all identical copies of the ballot for the grading profile.
+
+Thus, for example, in 6.006 we would have five ballots contributed by
+each pset, twenty by each quiz, and thirty by the final exam.
+
+HOW TO COMPUTE THE FINAL ORDERING OF STUDENTS
+
+To compute a final ordering of the students from the profile
+consisting of all the ballots for the psets, quizzes, and final, 
+we use methods to maximize the Kemeny-Young score for the output
+ordering.
+
+Let m denote the number of students.  Each ballot has length at most m.
+
+From the profile, the method first computes a "preference matrix" A
+such that A[i][j] is the number of ballots listing student i strictly
+ahead of student j.
+
+We wish to find the ordering of students  s_1, s_2, ..., s_m that
+maximizes the Kemeny-Young score
+
+     K = sum_{i<j} A[s_i][s_j]
+
+That is, the sum, over all pairs of students s_i, s_j in the final
+output ordering, where s_i precedes (is listed higher than) s_j, of
+the number of votes that prefer s_i over s_j.  
+
+Although maximizing K is NP-hard in general, in practice it is quite
+easy to do, even for classes of several hundred students.
+
+IMPLEMENTATION
+
+An implementation "gbv.py" was written, and run on the grade
+spreadsheet for 6.006 Fall 2015 produced by Anak Yodpinyanee.  Shalev
+Ben-David and Anak participated in many discussions on the pros and
+cons of various scoring-based methods, which stiumulated me to write
+down this alternative ranking-based approach.
+
+Usage notes are given in a separate file usage-notes.txt
+
+
+FURTHER DISCUSSION
+
+In terms of understandability, I think it may suffice just to say that
+each grade component produces a preferential ballot, each such ballot
+is replicated a number of times proportional to its weight, and then a
+standard ranked-choice voting method (called the ``Kemeny-Young'' method) 
+is used to combine these orderings into a single output
+ordering for the class.  The faculty may grade by providing dividing
+lines in this ordering between different grade levels, and then
+fine-tuning this initial grade assignment based on other factors
+(class participation, perhaps).
+
+Handling a missing final grade (for an OX student) can be done by
+correcting that student's score for the final (or other missing
+components) and re-running the ranked-pairs algorithm.  The (new) rank 
+in the new output of the student whose grade was corrected can then
+be used to determine a final grade.
+
+If this method is used, it would be necessary to not use the policy of
+"moving the weight to the final" for missing grade components, since
+each grade component must be treated uniformly.  Maybe it is OK just
+to say that the student can drop two psets and one quiz without formal
+penalty (although their grade may be better if these scores are included,
+if they did well on these components).  If you want to make this formal,
+the system could automatically drop those components where the student's
+rank (within that component) was the worst.
+
+The scheme is not "simple".  The method can not be implemented nicely
+within an Excel spreadsheet; some auxiliary code is needed for this.
+
+The code gbv.py (grading by voting) could be adapted for actual use
+in a class. (There is a separate module kem.py for maximizing the
+Kemeny score, given a preference matrix.)
+
+The method can be run part-way through the term to allow staff (and
+students) know how the students are doing---they can see their
+rank-so-far in the class, based on the "ballots cast so far"...  This
+can be used to estimate likely grades, or grade ranges, for the
+students.
+
+It doesn't seem particularly easy to answer a question such as "How
+well do I need to do on the final to get a B for the course?"  But
+this is true for most grading systems.
+
+The voting method does presently use some randomization to break ties.
+With a different randomization seed, a different ordering may be
+obtained, but one with the same score.  These will ordinarily be due
+to the swapping of two students that are equally preferred by the
+cast votes.  (There is ``zero gap'' between these two students.)
+
+The method proposed here:
+    -- avoids complex and poorly-understood score-normalization methods
+    -- works smoothly with missing data
+    -- handles weights smoothly for different components
+    -- handles "voting paradox" situations nicely, where different
+       components suggest different orderings, perhaps in a
+       cyclic pattern as might appear in a "voting paradox"
+    -- is not so hard to implement (but is more complex than
+       a simple scoring method)
+    -- has a running time of O(m^3) for m students, so is perhaps
+       limited to class sizes of less than 1000.  
+       But a class size of 250 runs in under one minute on a laptop
+       (using python as implemented in pypy).
+    -- Is certainly compatible with using spreadsheets, as the method
+       can take .csv files as input and produce them as output.
+
+
+
