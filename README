@@ -82,7 +82,8 @@ Discussion:
 
 -- An earlier version was based on the use of Kemeny score rankings.
    While this was technically interesting, it had a number of deficiencies,
-   including complexity.  See the "kemeny" branch of this github repository
+   including complexity.  See the subdirectory this github repository named
+      old-alternative-kemeny-based-method
    if you are interested in this.
 
 -- I think the best approach for dealing with exceptions, etc. is
