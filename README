@@ -1,6 +1,14 @@
 Here we propose a simple method to rank students in a class, based on
 the students' performance on each grade component (homework, etc.)
 
+We call this method "weighted rank-based scoring", since 
+   -- a score for each student is computed as a weighted average
+      of that student's score on each component, and 
+   -- a student's score on a component is based on the student's rank
+      among all students who completed that component.
+We also provide support allowing students to e.g. drop their lowest
+two homework grades.
+
 To illustrate, we provide a program (rank.py) that takes an input CSV
 file like this:
 
