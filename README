@@ -1,3 +1,6 @@
+Weighted Rank-Based Scoring
+---------------------------
+
 Here we propose a simple method to rank students in a class, based on
 the students' performance on each grade component (homework, etc.)
 
@@ -88,11 +91,22 @@ See the included files for more documentation, code, etc.:
 
 Discussion:
 
--- An earlier version was based on the use of Kemeny score rankings.
+-- An earlier version was based on the use of Kemeny-Young score rankings.
    While this was technically interesting, it had a number of deficiencies,
    including complexity.  See the subdirectory this github repository named
       old-alternative-kemeny-based-method
    if you are interested in this.
+
+   The current method bears a closer relation to the "Borda count" method of
+   voting than to the Kemeny-Young method.  I do not feel, however, that the
+   critiques of the Borda count method in general voting situations are so
+   relevant here.  For example, Borda fails the majoritarian criterion: a
+   student who is in first place in a majority of the grade components (by
+   weight) may not be first in the final ranking, if they did very poorly
+   on the other components.  That outcome seems OK in a grading scenario,
+   even if it seems dubious in a voting scenario.  So we are not bothered
+   by critiques of Borda count for voting scenarios when we apply it
+   (or near variants of it) here in our grading scenario.
 
 -- I think the best approach for dealing with exceptions, etc. is
    to drop the lowest scores for homeworks, etc.  This policy is
@@ -138,4 +152,4 @@ Discussion:
    Anak Yodpinyanee for helpful discussions and feedback.
 
 Ron Rivest  
-2016-01-11
+2016-01-12
