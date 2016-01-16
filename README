@@ -93,6 +93,8 @@ See the included files for more documentation, code, etc.:
     testnnnn.csv.3.droppedscores.rank.csv -- same as previous, but with some scores dropped by
                                              dropper.py, and ranks recomputed
 
+    (Some of the test data is in the subfolder "examples".)
+
 Discussion:
 
 -- An earlier version was based on the use of Kemeny-Young score rankings.
