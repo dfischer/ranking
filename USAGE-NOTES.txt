@@ -1,6 +1,6 @@
 Notes on using the rank.py (student ranking) program.
 Ronald L. Rivest
-January 9, 2016
+January 16, 2016
 ------------------------------------------------------
 
 We assume you have grade data for the students in a class, and a
@@ -13,15 +13,13 @@ Here are the steps to take:
     with a header line, a weight line, and one student score line
     for each student.
 
-        STU_ID1 ,  H1 ,  H2 ,  H3 ,  Q1 ,  Q2 , Final
-              0 ,   5 ,   5 ,   5 ,  20 ,  20 ,    30
-         X80826 ,   6 ,   8 ,   8 ,  -- ,  80 ,   185
-         X81001 ,   7 ,   7 ,  -- ,  91 ,  74 ,   139
-         X81668 ,   6 ,   6 ,   8 ,  79 ,  93 ,   161
-         X98883 ,  -- ,  10 ,  10 ,  -- ,  81 ,   200
-         X95731 ,   7 ,  10 ,   8 ,  93 , 100 ,   200
-         X96332 ,  -- ,  10 ,  -- ,  98 ,  78 ,   172
-         X88957 ,   8 ,   8 ,   9 ,  91 ,  83 ,   180
+        STU_ID ,  H1 ,  H2 ,  H3 ,  H4 ,  Q1 ,  Q2 , Final
+             0 ,   5 ,   5 ,   5 ,   5 ,  20 ,  20 ,    30
+           X99 ,  -- ,   9 ,  10 ,   8 ,  -- ,  87 ,   200
+           X94 ,   9 ,   9 ,   9 ,  -- , 100 ,  92 ,   200
+           X78 ,   6 ,   8 ,   7 ,   8 ,  52 ,  56 ,   160
+           X63 ,   3 ,   5 ,  -- ,   2 ,  63 ,  61 ,   143
+           X87 ,   8 ,   9 ,   6 ,  10 ,  84 ,  94 ,   200
 
     Here we have first a header line giving a name for each of the
     seven columns, from STU-ID1 to Final.
@@ -34,14 +32,15 @@ Here are the steps to take:
     are read as zeros.
 
     Finally, we have one data line for each student, giving
-    their score for each component, from student X80826 (first student)
-    to student X88957 (last student). 
+    their score for each component, from student X99 (first student)
+    to student X87 (last student). 
 
     Some data items may be missing, and are indicated as "--" in the
-    above example.  However, any non-numeric value will be treated as
+    above example.  Any non-numeric value will be treated as
     "missing" and converted to "--" internally.
 
     This small data set was created with the program make_data.py.
+    (E.g. "pypy make_data.py 5 --seed 52")
     You can use make_data.py to create other sample data sets.
     E.g.
 
@@ -49,84 +48,75 @@ Here are the steps to take:
 
     creates and saves a test data file for 33 students.
 
-    An example CSV file (for seven students) is saved as test0007.csv in the 
+    An example CSV file (for five students) is saved as test0005.csv in the 
     repository.
 
 (2) Run rank.py on the CSV file:
 
-        pypy rank.py test0007.csv
+        pypy rank.py test0005.csv
 
-    There will be output printed on the console, and also a CSV file
-    saved with the output.
+    There will be output printed on the console, and also three CSV files
+    saved with output.
 
-    Here is the output printed to the terminal for our seven-student example:
+    Here is the output printed to the terminal for our five-student example:
 
+        11:27:39 ranking $ pypy rank.py test0005.csv
+        ---------------------------------------------
         -- Student ranking program (rank.py)       --
-        -- Version 0.2 (1/9/16) Ronald L. Rivest   --
-        Reading input file: test0007.csv
+        -- Version 0.2 (1/15/16) Ronald L. Rivest  --
+        ---------------------------------------------
+        Reading input file: test0005.csv
         Column names (with weights for those being included in grade):
-             STU_ID1 ------
+              STU_ID ------
                   H1 weight 5
                   H2 weight 5
                   H3 weight 5
+                  H4 weight 5
                   Q1 weight 20
                   Q2 weight 20
                Final weight 30
-        7 students
-        ----------------------------------------------------------------
-        LISTING OF ALL STUDENTS (BEST FIRST):
-          STU_ID1   H1   H2   H3   Q1    Q2  Final  avg_score  rank 
-          X95731     7   10    8   93   100    200      0.252     0 
-          X98883    --   10   10   --    81    200      0.295     1 
-          X88957     8    8    9   91    83    180      0.464     2 
-          X96332    --   10   --   98    78    172      0.511     3 
-          X80826     6    8    8   --    80    185      0.518     4 
-          X81668     6    6    8   79    93    161      0.654     5 
-          X81001     7    7   --   91    74    139      0.766     6 
-        ----------------------------------------------------------------
+        5 students
+        --------------------------------------------------------------------------------
+        LISTING OF ALL STUDENTS (BEST FIRST) WITH RAW GRADES:
+          STU_ID   H1  H2   H3   H4    Q1   Q2  Final  wtd_score  rank 
+            X94     9   9    9   --   100   92    200      0.702     1 
+            X87     8   9    6   10    84   94    200      0.667     2 
+            X99    --   9   10    8    --   87    200      0.613     3 
+            X78     6   8    7    8    52   56    160      0.283     4 
+            X63     3   5   --    2    63   61    143      0.265     5 
+        --------------------------------------------------------------------------------
+        test0005.csv.1.grades.rank.csv written.
 
+        --------------------------------------------------------------------------------
+        LISTING OF ALL STUDENTS (BEST FIRST) WITH SCALED SCORES:
+          STU_ID      H1      H2      H3      H4      Q1      Q2   Final  wtd_score  rank 
+            X94    0.800   0.667   0.600      --   0.800   0.667   0.667      0.702     1 
+            X87    0.600   0.667   0.200   0.800   0.600   0.833   0.667      0.667     2 
+            X99       --   0.667   0.800   0.500      --   0.500   0.667      0.613     3 
+            X78    0.400   0.333   0.400   0.500   0.200   0.167   0.333      0.283     4 
+            X63    0.200   0.167      --   0.200   0.400   0.333   0.167      0.265     5 
+        --------------------------------------------------------------------------------
+        test0005.csv.2.scores.rank.csv written.
 
-    We interpret the output as follows:
-      -- a restatement of the column headers, and their weights
-      -- a count of the number of students in the database (7)
-      -- a listing of the students in the class, best first, according
-         to the ranking found by the program.  The grade components for
-         each student are re-stated, followed by the average score for
-         that student, followed by the computed rank in class for that student.
-
-         Here student X95731 is "best" and student X81001 is at the bottom.
-
-      -- The output is also written onto a new CSV file, which has the same name
-         as the original except with ".1.grades.rank.csv" append.
-         (E.g. test0007.csv.1.grades.rank.csv)
-
-             STU_ID1,    H1,    H2,    H3,    Q1,     Q2,  Final,  avg_score,  rank, 
-             X95731 ,     7,    10,     8,    93,    100,    200,      0.252,     0, 
-             X98883 ,    --,    10,    10,    --,     81,    200,      0.295,     1, 
-             X88957 ,     8,     8,     9,    91,     83,    180,      0.464,     2, 
-             X96332 ,    --,    10,    --,    98,     78,    172,      0.511,     3, 
-             X80826 ,     6,     8,     8,    --,     80,    185,      0.518,     4, 
-             X81668 ,     6,     6,     8,    79,     93,    161,      0.654,     5, 
-             X81001 ,     7,     7,    --,    91,     74,    139,      0.766,     6, 
-
-         This file is basically identical to the original input file, except
-         with two new columns added (avg_score and rank).  This file may be read
-         into your favorite spreadsheet program.
-
-      -- Similar output files are written with other output flavors:
-
-             testnnnn.csv.2.scores.rank.csv
-                  Same except raw grades replaced by scaled scores.
-
-             testnnnn.csv.3.droppedscores.rank.csv
-                  Same as previous except some scores may be dropped by
-                  a policy implemented in dropper.py, and then the
-                  ranks are recomputed.
+        Effecting the following drop policy:
+            Dropping lowest 2 from: H1 H2 H3 H4
+            Dropping lowest 1 from: Q1 Q2
+        Recomputing weighted scores and ranks...
+        --------------------------------------------------------------------------------
+         LISTING OF ALL STUDENTS (BEST FIRST) WITH SCALED AND DROPPED SCORES:
+          STU_ID      H1      H2      H3      H4      Q1      Q2   Final  wtd_score  rank 
+            X87       --   0.667      --   0.800      --   0.833   0.667      0.733     1 
+            X94    0.800   0.667      --      --   0.800      --   0.667      0.722     2 
+            X99       --   0.667   0.800      --      --   0.500   0.667      0.622     3 
+            X78       --      --   0.400   0.500   0.200      --   0.333      0.308     4 
+            X63    0.200      --      --   0.200   0.400      --   0.167      0.250     5 
+        --------------------------------------------------------------------------------
+        test0005.csv.3.droppedscores.rank.csv written.
 
 
 Given the rank-ordering of the students, the avg_score information,
-and any other auxiliary information that may be relevant, the staff
-may then be able to assign grades for the class in an efficient and
+and any other auxiliary information that may be relevant, the faculty and
+staff may then be able to assign grades for the class in an efficient and
 reasonable manner.
 
 
