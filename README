@@ -55,6 +55,8 @@ The method used here works as follows:
               100   100   100    92    92    85    85    85    46
       then they receive respective raw scores:
                 8     8     8   6.5   6.5     4     4     4     1
+      This is known as handling ties by "fractional ranking"; see
+          https://en.wikipedia.org/wiki/Ranking#Ranking_in_statistics
 
       Missing grades are ignored here; they just reduce the number m.
 
