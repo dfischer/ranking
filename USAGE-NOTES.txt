@@ -9,9 +9,9 @@ listing of the students in order of decreasing overall performance.
 
 Here are the steps to take:
 
-(1) Use your favorite spreadsheet program to Create a CSV file
-    with a header line, a weight line, and one student score line
-    for each student.
+(1) Create a spreadsheet with a header line, a weight line,
+    and one student grade line for each student; save it as
+    a CSV file.
 
         STU_ID ,  H1 ,  H2 ,  H3 ,  H4 ,  Q1 ,  Q2 , Final
              0 ,   5 ,   5 ,   5 ,   5 ,  20 ,  20 ,    30
@@ -22,7 +22,8 @@ Here are the steps to take:
            X87 ,   8 ,   9 ,   6 ,  10 ,  84 ,  94 ,   200
 
     Here we have first a header line giving a name for each of the
-    seven columns, from STU-ID1 to Final.
+    seven columns: a student-id, four homeworks, two quizzes, and
+    a final exam.
 
     Then we have a "weight" line, giving the weight that each
     component (column) should contribute to the final ranking.  Here
