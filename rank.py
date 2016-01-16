@@ -1,6 +1,6 @@
 # student ranking program (rank.py)
 # Ron Rivest
-# 1/9/16
+# 1/15/16
 
 """
 This is a program to produce an overall student ranking, given
@@ -247,10 +247,24 @@ def augment(names, weights, grades, scores, stu_order, wtd_score):
         scores[stu].append(r+1)
     return names, weights, grades, scores
 
+def print_and_write_to_file(names, weights, data, stu_order, file_name):
+    """ 
+    Write data to terminal and to output file with given filename.
+    Here data is grades or scores.
+    """
+    output = sys.stdout
+    print_output(output, names, weights, data, stu_order," ")
+    print "-"*80
+
+    with open(file_name,"w") as file:
+        print_output(file, names, weights, data, stu_order,", ")
+    print file_name, "written."
+    print
+
 def main():
     print "---------------------------------------------"
     print "-- Student ranking program (rank.py)       --"
-    print "-- Version 0.2 (1/9/16) Ronald L. Rivest   --"
+    print "-- Version 0.2 (1/15/16) Ronald L. Rivest  --"
     print "---------------------------------------------"
 
     # PARSE ARGUMENTS 
@@ -281,27 +295,13 @@ def main():
     names2, weights2, grades2, scores2 = augment(names, weights, grades, scores, stu_order, wtd_score)
 
     # OUTPUT RESULTS
-    print "-"*80
-    print "LISTING OF ALL STUDENTS (BEST FIRST) WITH RAW GRADES:"
-    output = sys.stdout
-    print_output(output, names2, weights2, grades2, stu_order," ")
-    print "-"*80
-    output_filename = input_filename+".1.grades.rank.csv"
-    with open(output_filename,"w") as file:
-        print_output(file, names2, weights2, grades2, stu_order,", ")
-    print output_filename, "written."
-    print
+    print "-"*80 + "\nLISTING OF ALL STUDENTS (BEST FIRST) WITH RAW GRADES:"
+    print_and_write_to_file(names2, weights2, grades2, stu_order, 
+                            input_filename+".1.grades.rank.csv")
 
-    print "-"*80
-    print "LISTING OF ALL STUDENTS (BEST FIRST) WITH SCALED SCORES:"
-    output = sys.stdout
-    print_output(output, names2, weights2, scores2, stu_order," ")
-    print "-"*80
-    output_filename = input_filename+".2.scores.rank.csv"
-    with open(output_filename,"w") as file:
-        print_output(file, names2, weights2, scores2, stu_order,", ")
-    print output_filename, "written."
-    print
+    print "-"*80 + "\nLISTING OF ALL STUDENTS (BEST FIRST) WITH SCALED SCORES:"
+    print_and_write_to_file(names2, weights2, scores2, stu_order, 
+                            input_filename+".2.scores.rank.csv")
 
     # DROP WORST HOMEWORK, ETC...
     scores3 = copy.deepcopy(scores)
@@ -311,19 +311,9 @@ def main():
     stu_order, wtd_score, ranks, scores3 = compute_ranks(names, weights, scores3)
     names3, weights3, grades3, scores3 = augment(names, weights, grades, scores3, stu_order, wtd_score)
 
-    print "-"*80
-    print "LISTING OF ALL STUDENTS (BEST FIRST) WITH SCALED AND DROPPED SCORES:"
-    output = sys.stdout
-    print_output(output, names3, weights3, scores3, stu_order," ")
-    print "-"*80
-    output_filename = input_filename+".3.droppedscores.rank.csv"
-    with open(output_filename,"w") as file:
-        print_output(file, names3, weights3, scores3, stu_order,", ")
-    print output_filename, "written."
-    print
-
-        
-        
+    print "-"*80 + "\n LISTING OF ALL STUDENTS (BEST FIRST) WITH SCALED AND DROPPED SCORES:"
+    print_and_write_to_file(names3, weights3, scores3, stu_order, 
+                            input_filename+".3.droppedscores.rank.csv")
         
 main()
 
