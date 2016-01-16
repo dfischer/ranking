@@ -5,9 +5,10 @@
 
 # dropper.py is used by student ranking program rank.py
 
-# You can change the following drop policy, or have rank.py
+# Change the following drop policy, or have rank.py
 # pass along a different policy, in order to change the dropping behavior
 # Set DROP_POLICY to the empty list to have no items dropped.
+# Items that don't have corresponding columns in the data are just ignored.
 
 DROP_POLICY = [ (2, "H1", "H2", "H3", "H4", "H5", "H6"),      # drop lowest two psets
                 (1, "Q1", "Q2"),                               # drop lowest one quiz
