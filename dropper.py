@@ -93,10 +93,11 @@ def print_drop_policy(names, drop_policy=DEFAULT_DROP_POLICY):
         k = drop_policy_item[0]
         drop_policy_names = drop_policy_item[1:]
         common_names = [name for name in drop_policy_names if name in names]
-        print "    Dropping lowest %d from:"%k,
-        for name in common_names:
-            print name,
-        print        
+        if len(common_names)>0:
+            print "    Dropping lowest %d from:"%k,
+            for name in common_names:
+                print name,
+            print        
     
 
 

@@ -164,7 +164,8 @@ def compute_scores(names, weights, grades):
 
     # compare all pairs stu,stu2 of students
     # beats[stu][col] is number of other students in same column this student beats
-    # where a student beats himself (+1) and beats others with same score by one-half (0.5)
+    # where a student beats himself by one (+1)
+    # and beats others with same score by one-half (0.5)
     for stu in students:
         for col in range(n_cols):
             w = convert_to_float_if_possible(weights[col],0)
@@ -173,7 +174,6 @@ def compute_scores(names, weights, grades):
                 if not ismissing(d1):
                     stu_per_comp[col] += 1
                     weight_per_stu[stu] += weights[col]
-                    beats[stu][col] = 0
                     for stu2 in students:
                         d2 = grades[stu2][col]
                         if not ismissing(d2):
@@ -225,7 +225,7 @@ def compute_ranks(names, weights, scores):
     stu_order = [ s for (an, s) in L ]
     wtd_score = [ an for (an, s) in L ]
                 
-    ranks = range(n_stu)
+    ranks = range(1, n_stu+1)
     return stu_order, wtd_score, ranks, scores
 
 def augment(names, weights, grades, scores, stu_order, wtd_score):
@@ -242,9 +242,9 @@ def augment(names, weights, grades, scores, stu_order, wtd_score):
     weights.append(0)
     for r, stu in enumerate(stu_order):
         grades[stu].append(wtd_score[r])
-        grades[stu].append(r)
+        grades[stu].append(r+1)
         scores[stu].append(wtd_score[r])
-        scores[stu].append(r)
+        scores[stu].append(r+1)
     return names, weights, grades, scores
 
 def main():
