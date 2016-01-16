@@ -303,18 +303,19 @@ def main():
     print_and_write_to_file(names2, weights2, scores2, stu_order, 
                             input_filename+".2.scores.rank.csv")
 
-    # DROP WORST HOMEWORK, ETC...
-    scores3 = copy.deepcopy(scores)
-    scores3 = dropper.drop(names, weights, scores3)
+    if dropper.DROP_POLICY != []:
+        # DROP WORST HOMEWORK, ETC...
+        scores3 = copy.deepcopy(scores)
+        scores3 = dropper.drop(names, weights, scores3)
 
-    # THEN RECOMPUTE WEIGHTED SCORES AND NEW RANKS
-    print "Recomputing weighted scores and ranks..."
-    stu_order, wtd_score, ranks, scores3 = compute_ranks(names, weights, scores3)
-    names3, weights3, grades3, scores3 = augment(names, weights, grades, scores3, stu_order, wtd_score)
+        # THEN RECOMPUTE WEIGHTED SCORES AND NEW RANKS
+        print "Recomputing weighted scores and ranks..."
+        stu_order, wtd_score, ranks, scores3 = compute_ranks(names, weights, scores3)
+        names3, weights3, grades3, scores3 = augment(names, weights, grades, scores3, stu_order, wtd_score)
 
-    print "-"*80 + "\n LISTING OF ALL STUDENTS (BEST FIRST) WITH SCALED AND DROPPED SCORES:"
-    print_and_write_to_file(names3, weights3, scores3, stu_order, 
-                            input_filename+".3.droppedscores.rank.csv")
+        print "-"*80 + "\n LISTING OF ALL STUDENTS (BEST FIRST) WITH SCALED AND DROPPED SCORES:"
+        print_and_write_to_file(names3, weights3, scores3, stu_order, 
+                                input_filename+".3.droppedscores.rank.csv")
         
 main()
 
