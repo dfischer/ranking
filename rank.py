@@ -308,6 +308,7 @@ def main():
     scores3 = dropper.drop(names, weights, scores3)
 
     # THEN RECOMPUTE WEIGHTED SCORES AND NEW RANKS
+    print "Recomputing weighted scores and ranks..."
     stu_order, wtd_score, ranks, scores3 = compute_ranks(names, weights, scores3)
     names3, weights3, grades3, scores3 = augment(names, weights, grades, scores3, stu_order, wtd_score)
 
