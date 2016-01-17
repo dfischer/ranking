@@ -10,7 +10,7 @@ listing of the students in order of decreasing overall performance.
 Here are the steps to take:
 
 (1) Create a spreadsheet with a header line, a weight line,
-    and one student grade line for each student; save it as
+    and a number of student grades lines; save it as
     a CSV file.
 
         STU_ID ,  H1 ,  H2 ,  H3 ,  H4 ,  Q1 ,  Q2 , Final
@@ -33,7 +33,7 @@ Here are the steps to take:
     are read as zeros.
 
     Finally, we have one data line for each student, giving
-    their score for each component, from student X99 (first student)
+    their grade for each component, from student X99 (first student)
     to student X87 (last student). 
 
     Some data items may be missing, and are indicated as "--" in the
@@ -124,10 +124,15 @@ Here are the steps to take:
         test0005.csv.3.droppedscores.rank.csv written.
 
 
+The above small example is merely illustrative; our rank-based scoring
+method has rather "lumpy" scores when the class is so small.
+
 Given the rank-ordering of the students, the avg_score information,
 and any other auxiliary information that may be relevant, the faculty and
 staff may then be able to assign grades for the class in an efficient and
 reasonable manner.
+
+
 
 
 
