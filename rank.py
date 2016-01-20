@@ -33,7 +33,7 @@ def read_csv(input_filename):
         reader = csv.reader(csvfile)
         return [row for row in reader]
 
-def read_grades(rows, skiprows=0, maxrows=10000):
+def parse_csv(rows, skiprows=0, maxgraderows=10000):
     """ 
     Parse given list of rows from CSV file.
     Return:
@@ -50,14 +50,14 @@ def read_grades(rows, skiprows=0, maxrows=10000):
           (a zero, non-numeric or missing weight means to ignore this column for grade;
            it will be converted to zero internally)
         a number of rows of data, one per student
-    At most the first 'maxrows' of student grade data will be read.
+    At most the first 'maxgraderows' of student grade data will be read.
     """
     rows = rows[skiprows:]
     names = rows[0]
     names = [ name.strip() for name in names ]
     weights = rows[1]
     weights = [ max(0, convert_to_float_if_possible(w,0)) for w in weights ]
-    grades = rows[2:maxrows]
+    grades = rows[2:maxgraderows]
     return names, weights, grades
 
 # MISSING DATA (marked by sentinel value "--")
@@ -118,10 +118,10 @@ def datum_str(datum, width, sep):
         else:
             return ("%"+str(width)+".3f"+sep)%float(datum)
 
-def print_output(output, names, weights, data, best_stu_order,sep):
+def build_output(names, weights, data, best_stu_order,sep):
     """
-    Print output to file (or equivalent I/O) "output".
-    Print names, weights, and then the rows in data (one per student).
+    Build and return string for later output to file (or equivalent I/O) "output".
+    Give names, weights, and then the rows in data (one per student).
     The order of the rows is given by best_stu_order.
     Sep is what to put between data elements:
         either "," (for csv use) or " " (for screen).
@@ -137,16 +137,18 @@ def print_output(output, names, weights, data, best_stu_order,sep):
             datum = data[stu][col]
             width[col] = max(width[col],len(datum_str(datum, 0, sep)))
 
-    # now print 
+    # now build list of items for output
+    items = []
     for col, name, in enumerate(names):
-        print >>output, ("%"+str(width[col])+"s"+sep)%(name.strip()),
-    print >>output
+        items.append(("%"+str(width[col])+"s"+sep)%(name.strip()))
+    items.append("\n")
     # Data rows, one per student:
     for rank, stu in enumerate(best_stu_order):
         for col in range(n_cols):
             datum = data[stu][col]
-            print >>output, datum_str(datum, width[col], sep),
-        print >>output
+            items.append(datum_str(datum, width[col], sep))
+        items.append("\n")
+    return "".join(items)
 
 def compute_scores(names, weights, grades):
     """ 
@@ -206,8 +208,10 @@ def normalize_scores(weights, grades, beats, stu_per_comp):
 def compute_ranks(names, weights, scores):
     """
     Compute weighted average score and new ranks.
+
+    Return 
     """
-    n_cols = len(scores[0])
+    columns = range(len(scores[0]))
     n_stu = len(scores)
     students = range(n_stu)
 
@@ -216,7 +220,7 @@ def compute_ranks(names, weights, scores):
     for stu in students:
         total = 0.0
         total_weight = 0.0
-        for col in range(n_cols):
+        for col in columns:
             if weights[col]>0:
                 d = scores[stu][col]
                 if not ismissing(d):
@@ -225,8 +229,8 @@ def compute_ranks(names, weights, scores):
         wtd_score[stu] = total / total_weight
 
     L = sorted([ (wtd_score[stu], stu) for stu in students ], reverse=True)
-    stu_order = [ s for (an, s) in L ]
-    wtd_score = [ an for (an, s) in L ]
+    stu_order = [ stu for (ws, stu) in L ]
+    wtd_score = [ ws for (ws, stu) in L ]
                 
     ranks = range(1, n_stu+1)
     return stu_order, wtd_score, ranks, scores
@@ -255,39 +259,36 @@ def print_and_write_to_file(names, weights, data, stu_order, file_name):
     Write data to terminal and to output file with given filename.
     Here data is grades or scores.
     """
-    output = sys.stdout
-    print_output(output, names, weights, data, stu_order," ")
+    print build_output(names, weights, data, stu_order," "),
     print "-"*80
 
     with open(file_name,"w") as file:
-        print_output(file, names, weights, data, stu_order,", ")
+        file.write(build_output(names, weights, data, stu_order,", "))
     print file_name, "written."
     print
 
 def main():
-    print "---------------------------------------------"
-    print "-- Student ranking program (rank.py)       --"
-    print "-- Version 0.2 (1/15/16) Ronald L. Rivest  --"
-    print "---------------------------------------------"
+    print "--------------------------------------------"
+    print "-- Student ranking program (rank.py)      --"
+    print "-- Version 0.2 (1/19/16) Ronald L. Rivest --"
+    print "--------------------------------------------"
 
     # PARSE ARGUMENTS 
     parser = argparse.ArgumentParser(description='Rank-order students based on performance.')
-    parser.add_argument('input_filename',help='csv file with header row, weight row, and then one row per student')
+    parser.add_argument('input_filename',help='csv file with header row, weight row, and then one grade row per student')
     parser.add_argument('--skiprows',default=0,help='number of rows to skip before header row')
     args = parser.parse_args()
 
     input_filename = args.input_filename
     skiprows = int(args.skiprows)
-    maxrows = 10000
+    maxgraderows = 10000
 
     # READ AND CLEAN UP DATA
     rows = read_csv(input_filename)
-    names, weights, grades = read_grades(rows, skiprows, maxrows)
-    n_stu = len(grades)
-    n_cols = len(weights)
+    names, weights, grades = parse_csv(rows, skiprows, maxgraderows)
     convert_data(weights, grades)
     print_grade_components(names, weights)
-    print n_stu, "students"
+    print len(grades), "students"
 
     # COMPUTE SCALED SCORES
     # scores has one row per student, one column per original grades column
