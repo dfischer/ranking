@@ -209,7 +209,8 @@ def compute_ranks(names, weights, scores):
     """
     Compute weighted average score and new ranks.
 
-    Return 
+    Return new student ordering (best to worst), weighted scores per student,
+    ranks of students (1 is best).
     """
     columns = range(len(scores[0]))
     n_stu = len(scores)
@@ -233,7 +234,7 @@ def compute_ranks(names, weights, scores):
     wtd_score = [ ws for (ws, stu) in L ]
                 
     ranks = range(1, n_stu+1)
-    return stu_order, wtd_score, ranks, scores
+    return stu_order, wtd_score, ranks
 
 def augment(names, weights, grades, scores, stu_order, wtd_score):
     """
@@ -295,7 +296,7 @@ def main():
     scores = compute_scores(names, weights, grades)
 
     # COMPUTE WEIGHTED AVERAGE SCORES AND RANKS
-    stu_order, wtd_score, ranks, scores = compute_ranks(names, weights, scores)
+    stu_order, wtd_score, ranks = compute_ranks(names, weights, scores)
 
     names2, weights2, grades2, scores2 = augment(names, weights, grades, scores, stu_order, wtd_score)
 
@@ -315,7 +316,7 @@ def main():
 
         # THEN RECOMPUTE WEIGHTED SCORES AND NEW RANKS
         print "Recomputing weighted scores and ranks..."
-        stu_order, wtd_score, ranks, scores3 = compute_ranks(names, weights, scores3)
+        stu_order, wtd_score, ranks = compute_ranks(names, weights, scores3)
         names3, weights3, grades3, scores3 = augment(names, weights, grades, scores3, stu_order, wtd_score)
 
         print "-"*80 + "\n LISTING OF ALL STUDENTS (BEST FIRST) WITH SCALED AND DROPPED SCORES:"
