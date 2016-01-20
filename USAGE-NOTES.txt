@@ -52,7 +52,7 @@ Here are the steps to take:
     An example CSV file (for five students) is saved as test0005.csv in the 
     repository.
 
-(2) Edit the program dropper.py to specify a policy, if desired, for dropping
+(2) Edit the program policy.py to specify a policy, if desired, for dropping
     the lowest scores in various categories.  For example, the policy
 
         DROP_POLICY = [ (2, "H1", "H2", "H3", "H4"),     

@@ -96,7 +96,7 @@ See the included files for more documentation, code, etc.:
 
     rank.py               -- main program
     make_data.py          -- generates test CSV files
-    dropper.py            -- if you want to e.g. drop lowest homework scores
+    policy.py             -- if you want to e.g. drop lowest homework scores
 
     testnnnn.csv                        -- input CSV test data file with nnnn students
 
@@ -105,7 +105,7 @@ See the included files for more documentation, code, etc.:
     testnnnn.csv.2.scores.rank.csv        -- same, except grades replaced with scaled scores
                                              per component
     testnnnn.csv.3.droppedscores.rank.csv -- same as previous, but with some scores dropped by
-                                             dropper.py, and ranks recomputed
+                                             policy.py, and ranks recomputed
 
     (Some of the test data is in the subfolder "examples".)
 
@@ -147,7 +147,7 @@ Discussion:
    so even the number 2 student (with scaled score 0.6) is doing better
    here than on problem set #1.
 
-   The module dropper.py allows for implementation of policies to
+   The module policy.py allows for implementation of policies to
    drop e.g. the lowest one or two homework grades, the lowest quiz
    grade, etc.  This file should be modified to get the desired policy.
 
