@@ -21,43 +21,44 @@ import dropper
 ## Beginning of ranking program
 ##############################################################################
 
-def read_grades(input_filename, skiprows=0, maxrows=10000):
+def read_csv(input_filename):
     """ 
-    Read grades file at given input_filename.
+    Return list of rows of a CSV file. 
+
+    Be careful: the values read from csv are all STRINGS, and must be 
+    converted to numeric data types as appropriate.
+    """
+    print "Reading input file:", input_filename
+    with open(input_filename, 'rU') as csvfile:   
+        reader = csv.reader(csvfile)
+        return [row for row in reader]
+
+def read_grades(rows, skiprows=0, maxrows=10000):
+    """ 
+    Parse given list of rows from CSV file.
     Return:
        list of column names, 
        list of column weights
-           non-numeric --> not part of grade
-           numeric     --> weight for weighting in grade
+           positive numeric     --> weight for weighting in grade
+           non-positive or non-numeric --> not part of grade
        rows of student grades.
 
     The input file format is:
         'skiprows' rows to be skipped
         a header row giving column names
         a weight row given component weights for components to be included
-          (a zero, non-numeric or missing weight means to ignore this column for grade)
+          (a zero, non-numeric or missing weight means to ignore this column for grade;
+           it will be converted to zero internally)
         a number of rows of data, one per student
     At most the first 'maxrows' of student grade data will be read.
-
-    BE CAREFUL: the values read from csv are all STRINGS, and must be 
-    converted to numeric data types as appropriate.
     """
-    print "Reading input file:", input_filename
-    # rU is universal newline mode
-    with open(input_filename, 'rU') as csvfile:   
-        gradereader = csv.reader(csvfile)
-        skipped_rows = []
-        for _ in range(skiprows):
-            skipped_rows.append(gradereader.next())
-        names = gradereader.next()        
-        names = [ name.strip() for name in names ]
-        weights = gradereader.next()
-        weights = [ convert_to_float_if_possible(w,0) for w in weights ]
-        grades = []
-        for row in gradereader:
-            grades.append(row)
-        grades = grades[:maxrows]
-        return names, weights, grades
+    rows = rows[skiprows:]
+    names = rows[0]
+    names = [ name.strip() for name in names ]
+    weights = rows[1]
+    weights = [ max(0, convert_to_float_if_possible(w,0)) for w in weights ]
+    grades = rows[2:maxrows]
+    return names, weights, grades
 
 # MISSING DATA (marked by sentinel value "--")
 MISSING = "--"
@@ -100,9 +101,8 @@ def print_grade_components(names, weights):
     n_cols = len(weights)
     for j in range(n_cols):
         print "  %10s"%names[j],
-        w = convert_to_float_if_possible(weights[j],0)
-        if w>0:
-            print "weight", "%g"%w
+        if weights[j]>0:
+            print "weight", "%g"%weights[j]
         else:
             print "------"
 
@@ -152,12 +152,9 @@ def compute_scores(names, weights, grades):
     """ 
     Return scores: array of student x column with student scores (derived from rank within column)
     """
-
     n_stu = len(grades)           
     n_cols = len(names)
-
     students = range(n_stu)
-    
     stu_per_comp = [ 0  for col in range(n_cols) ]
     weight_per_stu = [ 0 for stu in students ]
     beats = [ [ 0 for col in range(n_cols) ] for stu in students ]
@@ -168,8 +165,7 @@ def compute_scores(names, weights, grades):
     # and beats others with same score by one-half (0.5)
     for stu in students:
         for col in range(n_cols):
-            w = convert_to_float_if_possible(weights[col],0)
-            if w>0:
+            if weights[col]>0:
                 d1 = grades[stu][col]
                 if not ismissing(d1):
                     stu_per_comp[col] += 1
@@ -183,14 +179,22 @@ def compute_scores(names, weights, grades):
                                 beats[stu][col] += 0.5
                             elif d1 > d2:
                                 beats[stu][col] += 1.0
+    return normalize_scores(weights, grades, beats, stu_per_comp)
 
-    # normalize scores to [0,1] by dividing by number of students per component, plus one
-    # preserve missing or other data "as is"
+def normalize_scores(weights, grades, beats, stu_per_comp):
+    """
+    Return normalized scores (in beats) to [0,1] by dividing by 
+    one plus the number of students in the component component
+    preserve missing or other data "as is"
+    """
+    n_cols = len(weights)
+    n_stu = len(beats)
+    students = range(n_stu)
+    
     scores =  [ [ 0 for col in range(n_cols) ] for stu in students ]
     for stu in students:
         for col in range(n_cols):
-            w = convert_to_float_if_possible(weights[col],0)
-            if w>0:
+            if weights[col]>0:
                 if not ismissing(grades[stu][col]):
                     scores[stu][col] = beats[stu][col] / (float(stu_per_comp[col]) + 1.0)
                 else:
@@ -213,12 +217,11 @@ def compute_ranks(names, weights, scores):
         total = 0.0
         total_weight = 0.0
         for col in range(n_cols):
-            w = convert_to_float_if_possible(weights[col],0)
-            if w>0:
+            if weights[col]>0:
                 d = scores[stu][col]
                 if not ismissing(d):
-                    total += w * d
-                    total_weight += w
+                    total += weights[col] * d
+                    total_weight += weights[col]
         wtd_score[stu] = total / total_weight
 
     L = sorted([ (wtd_score[stu], stu) for stu in students ], reverse=True)
@@ -278,7 +281,8 @@ def main():
     maxrows = 10000
 
     # READ AND CLEAN UP DATA
-    names, weights, grades = read_grades(input_filename, skiprows, maxrows)
+    rows = read_csv(input_filename)
+    names, weights, grades = read_grades(rows, skiprows, maxrows)
     n_stu = len(grades)
     n_cols = len(weights)
     convert_data(weights, grades)
@@ -304,7 +308,7 @@ def main():
                             input_filename+".2.scores.rank.csv")
 
     if dropper.DROP_POLICY != []:
-        # DROP WORST HOMEWORK, ETC...
+        # DROP WORST HOMEWORK, ETC. ACCORDING TO POLICY
         scores3 = copy.deepcopy(scores)
         scores3 = dropper.drop(names, weights, scores3)
 
