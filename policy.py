@@ -1,9 +1,9 @@
-# dropper.py
-# program to drop lowest grade for a student (dropper.py)
+# policy.py
+# program to drop lowest grade for a student, or implement other policy
 # Ron Rivest
-# 1/16/16
+# 1/20/16
 
-# dropper.py is used by student ranking program rank.py
+# policy.py is used by student ranking program rank.py
 
 # Change the following drop policy, or have rank.py
 # pass along a different policy, in order to change the dropping behavior
@@ -11,7 +11,7 @@
 # Items that don't have corresponding columns in the data are just ignored.
 
 DROP_POLICY = [ (2, "H1", "H2", "H3", "H4", "H5", "H6"),      # drop lowest two psets
-                (1, "Q1", "Q2"),                               # drop lowest one quiz
+                (1, "Q1", "Q2"),                              # drop lowest one quiz
                 (2, "pset1", "pset2", "pset3", "pset4", "pset5", "pset6"), # variant spellings?
                 (1, "quiz1", "quiz2")
               ]

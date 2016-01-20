@@ -15,7 +15,7 @@ import copy
 import csv
 import sys
 
-import dropper
+import policy
 
 ##############################################################################
 ## Beginning of ranking program
@@ -309,10 +309,10 @@ def main():
     print_and_write_to_file(names2, weights2, scores2, stu_order, 
                             input_filename+".2.scores.rank.csv")
 
-    if dropper.DROP_POLICY != []:
+    if policy.DROP_POLICY != []:
         # DROP WORST HOMEWORK, ETC. ACCORDING TO POLICY
         scores3 = copy.deepcopy(scores)
-        scores3 = dropper.drop(names, weights, scores3)
+        scores3 = policy.drop(names, weights, scores3)
 
         # THEN RECOMPUTE WEIGHTED SCORES AND NEW RANKS
         print "Recomputing weighted scores and ranks..."
