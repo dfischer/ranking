@@ -17,6 +17,30 @@ import sys
 
 import policy
 
+class State():
+    """
+    The main data structure, consisting of:
+        a row of n_col column names
+        a row of n_col column weights  (zero weight for items not part of grade computation)
+        a table of n_stu rows, each of n_col items, of grade or score data
+    """
+    def __init__(self, names, weights, data):
+        self.names = copy.copy(names)
+        self.weights = copy.copy(weights)
+        self.data = copy.deepcopy(data)
+
+        self.n_col = len(names)
+        self.columns = range(self.n_col)
+        self.n_stu = len(data)
+        self.students = range(self.n_stu)
+
+        assert len(names) == len(weights)
+        for stu in self.students:
+            assert len(data[stu]) == len(names)
+
+    def copy(self):
+        return State(self.names, self.weights, self.data)
+
 ##############################################################################
 ## Beginning of ranking program
 ##############################################################################
@@ -36,12 +60,12 @@ def read_csv(input_filename):
 def parse_csv(rows, skiprows=0, maxgraderows=10000):
     """ 
     Parse given list of rows from CSV file.
-    Return:
-       list of column names, 
-       list of column weights
+    Return a new State with
+       column names, 
+       column weights
            positive numeric     --> weight for weighting in grade
-           non-positive or non-numeric --> not part of grade
-       rows of student grades.
+           zero                 --> not part of grade
+       data rows of student grades.
 
     The input file format is:
         'skiprows' rows to be skipped
@@ -58,7 +82,7 @@ def parse_csv(rows, skiprows=0, maxgraderows=10000):
     weights = rows[1]
     weights = [ max(0, convert_to_float_if_possible(w,0)) for w in weights ]
     grades = rows[2:maxgraderows]
-    return names, weights, grades
+    return State(names, weights, grades)
 
 # MISSING DATA (marked by sentinel value "--")
 MISSING = "--"
@@ -83,26 +107,25 @@ def convert_to_float_if_possible(x, elsevalue=MISSING):
     else:
         return float(x)
 
-def convert_data(weights, grades):
+def convert_data(state):
     """
     convert all grade data to floats, 
     with MISSING for data that doesn't convert to a float.
     """
-    n_rows = len(grades)
-    n_cols = len(weights)
-    for j in range(n_cols):
-        w = convert_to_float_if_possible(weights[j], 0)
+    new_state = state.copy()
+    for col in state.columns:
+        w = convert_to_float_if_possible(state.weights[col], 0)
         if w>0:
-            for i in range(n_rows):
-                grades[i][j] = convert_to_float_if_possible(grades[i][j])
+            for stu in state.students:
+                new_state.data[stu][col] = convert_to_float_if_possible(state.data[stu][col])
+    return new_state
 
-def print_grade_components(names, weights):
+def print_grade_components(state):
     print "Column names (with weights for those being included in grade):"
-    n_cols = len(weights)
-    for j in range(n_cols):
-        print "  %10s"%names[j],
-        if weights[j]>0:
-            print "weight", "%g"%weights[j]
+    for col in state.columns:
+        print "  %10s"%state.names[col],
+        if state.weights[col]>0:
+            print "weight", "%g"%state.weights[col]
         else:
             print "------"
 
@@ -118,62 +141,58 @@ def datum_str(datum, width, sep):
         else:
             return ("%"+str(width)+".3f"+sep)%float(datum)
 
-def build_output(names, weights, data, best_stu_order,sep):
+def build_output(state, stu_order,sep):
     """
-    Build and return string for later output to file (or equivalent I/O) "output".
+    Build and return string for later output to file (or equivalent I/O).
     Give names, weights, and then the rows in data (one per student).
-    The order of the rows is given by best_stu_order.
+    The order of the rows is given by stu_order.
     Sep is what to put between data elements:
         either "," (for csv use) or " " (for screen).
     """
-    n_cols = len(names)
 
     # first compute column widths for printing
-    width = [0]*(n_cols+1)
-    for col, name in enumerate(names):
+    width = [0]*(state.n_col+1)
+    for col, name in enumerate(state.names):
         width[col] = max(width[col],len(str(name.strip())))
-    for rank, stu in enumerate(best_stu_order):
-        for col in range(n_cols):
-            datum = data[stu][col]
+    for rank, stu in enumerate(stu_order):
+        for col in state.columns:
+            datum = state.data[stu][col]
             width[col] = max(width[col],len(datum_str(datum, 0, sep)))
 
     # now build list of items for output
     items = []
-    for col, name, in enumerate(names):
+    for col, name, in enumerate(state.names):
         items.append(("%"+str(width[col])+"s"+sep)%(name.strip()))
     items.append("\n")
     # Data rows, one per student:
-    for rank, stu in enumerate(best_stu_order):
-        for col in range(n_cols):
-            datum = data[stu][col]
+    for rank, stu in enumerate(stu_order):
+        for col in state.columns:
+            datum = state.data[stu][col]
             items.append(datum_str(datum, width[col], sep))
         items.append("\n")
     return "".join(items)
 
-def compute_scores(names, weights, grades):
+def compute_scores(state):
     """ 
-    Return scores: array of student x column with student scores (derived from rank within column)
+    Return new state with data converted to rank-based scores.
     """
-    n_stu = len(grades)           
-    n_cols = len(names)
-    students = range(n_stu)
-    stu_per_comp = [ 0  for col in range(n_cols) ]
-    weight_per_stu = [ 0 for stu in students ]
-    beats = [ [ 0 for col in range(n_cols) ] for stu in students ]
+    stu_per_comp = [ 0  for col in state.columns ]
+    weight_per_stu = [ 0 for stu in state.students ]
+    beats = [ [ 0 for col in state.columns ] for stu in state.students ]
 
     # compare all pairs stu,stu2 of students
     # beats[stu][col] is number of other students in same column this student beats
     # where a student beats himself by one (+1)
     # and beats others with same score by one-half (0.5)
-    for stu in students:
-        for col in range(n_cols):
-            if weights[col]>0:
-                d1 = grades[stu][col]
+    for stu in state.students:
+        for col in state.columns:
+            if state.weights[col]>0:
+                d1 = state.data[stu][col]
                 if not ismissing(d1):
                     stu_per_comp[col] += 1
-                    weight_per_stu[stu] += weights[col]
-                    for stu2 in students:
-                        d2 = grades[stu2][col]
+                    weight_per_stu[stu] += state.weights[col]
+                    for stu2 in state.students:
+                        d2 = state.data[stu2][col]
                         if not ismissing(d2):
                             if stu == stu2:
                                 beats[stu][col] += 1.0
@@ -181,90 +200,82 @@ def compute_scores(names, weights, grades):
                                 beats[stu][col] += 0.5
                             elif d1 > d2:
                                 beats[stu][col] += 1.0
-    return normalize_scores(weights, grades, beats, stu_per_comp)
+    return normalize_scores(state, beats, stu_per_comp)
 
-def normalize_scores(weights, grades, beats, stu_per_comp):
+def normalize_scores(state, beats, stu_per_comp):
     """
     Return normalized scores (in beats) to [0,1] by dividing by 
     one plus the number of students in the component component
     preserve missing or other data "as is"
     """
-    n_cols = len(weights)
-    n_stu = len(beats)
-    students = range(n_stu)
-    
-    scores =  [ [ 0 for col in range(n_cols) ] for stu in students ]
-    for stu in students:
-        for col in range(n_cols):
-            if weights[col]>0:
-                if not ismissing(grades[stu][col]):
-                    scores[stu][col] = beats[stu][col] / (float(stu_per_comp[col]) + 1.0)
+    new_state = state.copy()
+    for stu in state.students:
+        for col in state.columns:
+            if state.weights[col]>0:
+                if not ismissing(state.data[stu][col]):
+                    new_state.data[stu][col] = beats[stu][col] / (float(stu_per_comp[col]) + 1.0)
                 else:
-                    scores[stu][col] = MISSING
+                    new_state.data[stu][col] = MISSING
             else:
-                scores[stu][col] = grades[stu][col]
-    return scores
+                new_state.data[stu][col] = state.data[stu][col]
+    return new_state
 
-def compute_ranks(names, weights, scores):
+def compute_ranks(state):
     """
     Compute weighted average score and new ranks.
 
     Return new student ordering (best to worst), weighted scores per student,
     ranks of students (1 is best).
     """
-    columns = range(len(scores[0]))
-    n_stu = len(scores)
-    students = range(n_stu)
 
     # compute avg_score per student as weighted sum of component scores
-    wtd_score = [0 for stu in students]
-    for stu in students:
+    wtd_score = [0 for stu in state.students]
+    for stu in state.students:
         total = 0.0
         total_weight = 0.0
-        for col in columns:
-            if weights[col]>0:
-                d = scores[stu][col]
+        for col in state.columns:
+            if state.weights[col]>0:
+                d = state.data[stu][col]
                 if not ismissing(d):
-                    total += weights[col] * d
-                    total_weight += weights[col]
+                    total += state.weights[col] * d
+                    total_weight += state.weights[col]
         wtd_score[stu] = total / total_weight
 
-    L = sorted([ (wtd_score[stu], stu) for stu in students ], reverse=True)
+    L = sorted([ (wtd_score[stu], stu) for stu in state.students ], reverse=True)
     stu_order = [ stu for (ws, stu) in L ]
     wtd_score = [ ws for (ws, stu) in L ]
                 
-    ranks = range(1, n_stu+1)
+    ranks = range(1, state.n_stu+1)
     return stu_order, wtd_score, ranks
 
-def augment(names, weights, grades, scores, stu_order, wtd_score):
+def augment(state, stu_order, wtd_score):
     """
-    Augment grades and scores to have two new columns
+    Return new state with students in given order, and with
+    two new columns: wtd_score and rank
     """
-    names = copy.deepcopy(names)
-    weights = copy.deepcopy(weights)
-    grades = copy.deepcopy(grades)
-    scores = copy.deepcopy(scores)
-    names.append("wtd_score")
-    weights.append(0)
-    names.append("rank")
-    weights.append(0)
+    new_state = state.copy()
+    new_state.names.append("wtd_score")
+    new_state.weights.append(0)
+    new_state.names.append("rank")
+    new_state.weights.append(0)
+    new_state.n_col += 2
+    new_state.columns = range(new_state.n_col)
     for r, stu in enumerate(stu_order):
-        grades[stu].append(wtd_score[r])
-        grades[stu].append(r+1)
-        scores[stu].append(wtd_score[r])
-        scores[stu].append(r+1)
-    return names, weights, grades, scores
+        new_state.data[stu].append(wtd_score[r])
+        new_state.data[stu].append(r+1)
+    return new_state
 
-def print_and_write_to_file(names, weights, data, stu_order, file_name):
+def print_and_write_to_file(title, state, stu_order, file_name):
     """ 
     Write data to terminal and to output file with given filename.
     Here data is grades or scores.
     """
-    print build_output(names, weights, data, stu_order," "),
+    print "-"*80 + "\n" + title
+    print build_output(state, stu_order," "),
     print "-"*80
 
     with open(file_name,"w") as file:
-        file.write(build_output(names, weights, data, stu_order,", "))
+        file.write(build_output(state, stu_order,", "))
     print file_name, "written."
     print
 
@@ -286,41 +297,42 @@ def main():
 
     # READ AND CLEAN UP DATA
     rows = read_csv(input_filename)
-    names, weights, grades = parse_csv(rows, skiprows, maxgraderows)
-    convert_data(weights, grades)
-    print_grade_components(names, weights)
-    print len(grades), "students"
+    state = parse_csv(rows, skiprows, maxgraderows)
+    grade_state = convert_data(state)
+    print_grade_components(grade_state)
+    print grade_state.n_stu, "students"
 
-    # COMPUTE SCALED SCORES
+    # COMPUTE SCALED SCORES 
     # scores has one row per student, one column per original grades column
-    scores = compute_scores(names, weights, grades)
+    score_state = compute_scores(grade_state)
 
     # COMPUTE WEIGHTED AVERAGE SCORES AND RANKS
-    stu_order, wtd_score, ranks = compute_ranks(names, weights, scores)
+    stu_order, wtd_score, ranks = compute_ranks(score_state)
 
-    names2, weights2, grades2, scores2 = augment(names, weights, grades, scores, stu_order, wtd_score)
+    grade_state = augment(grade_state, stu_order, wtd_score)
+    score_state = augment(score_state, stu_order, wtd_score)
 
     # OUTPUT RESULTS
-    print "-"*80 + "\nLISTING OF ALL STUDENTS (BEST FIRST) WITH RAW GRADES:"
-    print_and_write_to_file(names2, weights2, grades2, stu_order, 
+    title = "LISTING OF ALL STUDENTS (BEST FIRST) WITH RAW GRADES:"
+    print_and_write_to_file(title, grade_state, stu_order, 
                             input_filename+".1.grades.rank.csv")
 
-    print "-"*80 + "\nLISTING OF ALL STUDENTS (BEST FIRST) WITH SCALED SCORES:"
-    print_and_write_to_file(names2, weights2, scores2, stu_order, 
+    title = "LISTING OF ALL STUDENTS (BEST FIRST) WITH SCALED SCORES:"
+    print_and_write_to_file(title, score_state, stu_order, 
                             input_filename+".2.scores.rank.csv")
 
     if policy.DROP_POLICY != []:
-        # DROP WORST HOMEWORK, ETC. ACCORDING TO POLICY
-        scores3 = copy.deepcopy(scores)
-        scores3 = policy.drop(names, weights, scores3)
+        # ADJUST: DROP WORST HOMEWORK, ETC. ACCORDING TO POLICY
+        adjusted_score_state = policy.drop(score_state.copy())
 
         # THEN RECOMPUTE WEIGHTED SCORES AND NEW RANKS
         print "Recomputing weighted scores and ranks..."
-        stu_order, wtd_score, ranks = compute_ranks(names, weights, scores3)
-        names3, weights3, grades3, scores3 = augment(names, weights, grades, scores3, stu_order, wtd_score)
+        stu_order, wtd_score, ranks = compute_ranks(adjusted_score_state)
+        
+        adjusted_score_state = augment(adjusted_score_state, stu_order, wtd_score)
 
-        print "-"*80 + "\n LISTING OF ALL STUDENTS (BEST FIRST) WITH SCALED AND DROPPED SCORES:"
-        print_and_write_to_file(names3, weights3, scores3, stu_order, 
+        title = "LISTING OF ALL STUDENTS (BEST FIRST) WITH SCALED AND DROPPED SCORES:"
+        print_and_write_to_file(title, adjusted_score_state, stu_order, 
                                 input_filename+".3.droppedscores.rank.csv")
         
 main()
