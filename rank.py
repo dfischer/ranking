@@ -248,22 +248,25 @@ def compute_ranks(state):
     ranks = range(1, state.n_stu+1)
     return stu_order, wtd_score, ranks
 
-def augment(state, stu_order, wtd_score):
+def add_column(state, new_name, new_weight, values, stu_order):
+    """ Return state with new column added. """
+    new_state = state.copy()
+    new_state.names.append(new_name)
+    new_state.weights.append(new_weight)
+    new_state.n_col += 1
+    new_state.columns = range(new_state.n_col)
+    for r, stu in enumerate(stu_order):
+        new_state.data[stu].append(values[r])
+    return new_state
+
+def add_columns(state, stu_order, wtd_score):
     """
     Return new state with students in given order, and with
     two new columns: wtd_score and rank
     """
-    new_state = state.copy()
-    new_state.names.append("wtd_score")
-    new_state.weights.append(0)
-    new_state.names.append("rank")
-    new_state.weights.append(0)
-    new_state.n_col += 2
-    new_state.columns = range(new_state.n_col)
-    for r, stu in enumerate(stu_order):
-        new_state.data[stu].append(wtd_score[r])
-        new_state.data[stu].append(r+1)
-    return new_state
+    state = add_column(state, "wtd_score", 0, wtd_score, stu_order)
+    state = add_column(state, "rank", 0, range(1, state.n_stu+1), stu_order)
+    return state
 
 def print_and_write_to_file(title, state, stu_order, file_name):
     """ 
@@ -309,16 +312,16 @@ def main():
     # COMPUTE WEIGHTED AVERAGE SCORES AND RANKS
     stu_order, wtd_score, ranks = compute_ranks(score_state)
 
-    grade_state = augment(grade_state, stu_order, wtd_score)
-    score_state = augment(score_state, stu_order, wtd_score)
+    sorted_grade_state = add_columns(grade_state, stu_order, wtd_score)
+    sorted_score_state = add_columns(score_state, stu_order, wtd_score)
 
     # OUTPUT RESULTS
     title = "LISTING OF ALL STUDENTS (BEST FIRST) WITH RAW GRADES:"
-    print_and_write_to_file(title, grade_state, stu_order, 
+    print_and_write_to_file(title, sorted_grade_state, stu_order, 
                             input_filename+".1.grades.rank.csv")
 
     title = "LISTING OF ALL STUDENTS (BEST FIRST) WITH SCALED SCORES:"
-    print_and_write_to_file(title, score_state, stu_order, 
+    print_and_write_to_file(title, sorted_score_state, stu_order, 
                             input_filename+".2.scores.rank.csv")
 
     if policy.DROP_POLICY != []:
@@ -329,7 +332,7 @@ def main():
         print "Recomputing weighted scores and ranks..."
         stu_order, wtd_score, ranks = compute_ranks(adjusted_score_state)
         
-        adjusted_score_state = augment(adjusted_score_state, stu_order, wtd_score)
+        adjusted_score_state = add_columns(adjusted_score_state, stu_order, wtd_score)
 
         title = "LISTING OF ALL STUDENTS (BEST FIRST) WITH SCALED AND DROPPED SCORES:"
         print_and_write_to_file(title, adjusted_score_state, stu_order, 
