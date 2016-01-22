@@ -5,6 +5,8 @@
 
 # policy.py is used by student ranking program rank.py
 
+# All class-specific policy implementations go here.
+
 # Change the following drop policy, or have rank.py
 # pass along a different policy, in order to change the dropping behavior
 # Set DROP_POLICY to the empty list to have no items dropped.
@@ -17,6 +19,8 @@ DROP_POLICY = [ (2, "H1", "H2", "H3", "H4", "H5", "H6"),      # drop lowest two 
               ]
 
 MISSING = "--"
+def ismissing(x):
+    return (x == MISSING)
 
 def isnonnumeric(x):
     """ Return True if x looks to be non-numeric """
@@ -25,6 +29,24 @@ def isnonnumeric(x):
     except ValueError:
         return True
     return False
+
+def compute_wtd_scores(state):
+    """  Compute weighted average scores. """
+    wtd_score = [0 for stu in state.students]
+    for stu in state.students:
+        total = 0.0
+        total_weight = 0.0
+        for col in state.columns:
+            if state.weights[col]>0:
+                d = state.data[stu][col]
+                if not ismissing(d):
+                    total += state.weights[col] * d
+                    total_weight += state.weights[col]
+        if total_weight > 0:
+            wtd_score[stu] = total / total_weight
+        else:
+            wtd_score[stu] = 0.0
+    return wtd_score
 
 def drop(state, drop_policy=DROP_POLICY):
     """

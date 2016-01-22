@@ -6,6 +6,8 @@
 This is a program to produce an overall student ranking, given
 as input a spreadsheet given student scores on various grade
 components, and given weights for those components.
+
+All class-specific policy code and data go into policy.py
 """
 
 """ (Distributed under MIT License) """
@@ -219,24 +221,6 @@ def normalize_scores(state, beats, stu_per_comp):
                 new_state.data[stu][col] = state.data[stu][col]
     return new_state
 
-def compute_wtd_scores(state):
-    """  Compute weighted average scores. """
-    wtd_score = [0 for stu in state.students]
-    for stu in state.students:
-        total = 0.0
-        total_weight = 0.0
-        for col in state.columns:
-            if state.weights[col]>0:
-                d = state.data[stu][col]
-                if not ismissing(d):
-                    total += state.weights[col] * d
-                    total_weight += state.weights[col]
-        if total_weight > 0:
-            wtd_score[stu] = total / total_weight
-        else:
-            wtd_score[stu] = 0.0
-    return wtd_score
-
 def sort_state(state, key_name):
     """ Sort data into decreasing order by key with given name"""
     key_col = state.names.index(key_name)
@@ -295,15 +279,13 @@ def main():
     print_grade_components(grade_state)
     print grade_state.n_stu, "students"
 
-    # COMPUTE SCALED SCORES 
+    # COMPUTE SCALED SCORES AND WEIGHTED AVERAGE SCORES
     # scores has one row per student, one column per original grades column
     score_state = compute_scores(grade_state)
+    wtd_score = policy.compute_wtd_scores(score_state)
 
-    # COMPUTE WEIGHTED AVERAGE SCORES AND RANKS
-    wtd_score = compute_wtd_scores(score_state)
-
-    grade_state = add_column(grade_state, "wtd_score", 0, wtd_score)
-    sorted_grade_state = sort_state(grade_state, "wtd_score")
+    sorted_grade_state = add_column(grade_state, "wtd_score", 0, wtd_score)
+    sorted_grade_state = sort_state(sorted_grade_state, "wtd_score")
     sorted_grade_state = add_column(sorted_grade_state, "rank", 0, range(1, score_state.n_stu+1))
 
     sorted_score_state = add_column(score_state, "wtd_score", 0, wtd_score)
@@ -325,7 +307,7 @@ def main():
 
         # THEN RECOMPUTE WEIGHTED SCORES AND NEW RANKS
         print "Recomputing weighted scores and ranks..."
-        wtd_score = compute_wtd_scores(adjusted_score_state)
+        wtd_score = policy.compute_wtd_scores(adjusted_score_state)
         adjusted_score_state = add_column(adjusted_score_state, "wtd_score", 0, wtd_score)
         sorted_adjusted_score_state = sort_state(adjusted_score_state, "wtd_score")
         sorted_adjusted_score_state = add_column(sorted_adjusted_score_state,
