@@ -141,11 +141,10 @@ def datum_str(datum, width, sep):
         else:
             return ("%"+str(width)+".3f"+sep)%float(datum)
 
-def build_output(state, stu_order,sep):
+def build_output(state, sep):
     """
     Build and return string for later output to file (or equivalent I/O).
     Give names, weights, and then the rows in data (one per student).
-    The order of the rows is given by stu_order.
     Sep is what to put between data elements:
         either "," (for csv use) or " " (for screen).
     """
@@ -154,7 +153,7 @@ def build_output(state, stu_order,sep):
     width = [0]*(state.n_col+1)
     for col, name in enumerate(state.names):
         width[col] = max(width[col],len(str(name.strip())))
-    for rank, stu in enumerate(stu_order):
+    for stu in state.students:
         for col in state.columns:
             datum = state.data[stu][col]
             width[col] = max(width[col],len(datum_str(datum, 0, sep)))
@@ -165,7 +164,7 @@ def build_output(state, stu_order,sep):
         items.append(("%"+str(width[col])+"s"+sep)%(name.strip()))
     items.append("\n")
     # Data rows, one per student:
-    for rank, stu in enumerate(stu_order):
+    for stu in state.students:
         for col in state.columns:
             datum = state.data[stu][col]
             items.append(datum_str(datum, width[col], sep))
@@ -238,44 +237,38 @@ def compute_wtd_scores(state):
             wtd_score[stu] = 0.0
     return wtd_score
 
-def sort_state(state, wtd_score):
-    L = sorted([ (wtd_score[stu], stu) for stu in state.students ], reverse=True)
+def sort_state(state, key_name):
+    """ Sort data into decreasing order by key with given name"""
+    key_col = state.names.index(key_name)
+    L = sorted([ (state.data[stu][key_col], stu) for stu in state.students ], reverse=True)
     stu_order = [ stu for (ws, stu) in L ]
-    wtd_score = [ ws for (ws, stu) in L ]
-    ranks = range(1, state.n_stu+1)
-    return stu_order, wtd_score, ranks
+    new_state = state.copy()
+    new_data = [ new_state.data[stu] for stu in stu_order ]
+    new_state.data = new_data
+    return new_state
 
-def add_column(state, new_name, new_weight, values, stu_order):
+def add_column(state, new_name, new_weight, values):
     """ Return state with new column added. """
     new_state = state.copy()
     new_state.names.append(new_name)
     new_state.weights.append(new_weight)
     new_state.n_col += 1
     new_state.columns = range(new_state.n_col)
-    for r, stu in enumerate(stu_order):
-        new_state.data[stu].append(values[r])
+    for stu in state.students:
+        new_state.data[stu].append(values[stu])
     return new_state
 
-def add_columns(state, stu_order, wtd_score):
-    """
-    Return new state with students in given order, and with
-    two new columns: wtd_score and rank
-    """
-    state = add_column(state, "wtd_score", 0, wtd_score, stu_order)
-    state = add_column(state, "rank", 0, range(1, state.n_stu+1), stu_order)
-    return state
-
-def print_and_write_to_file(title, state, stu_order, file_name):
+def print_and_write_to_file(title, state, file_name):
     """ 
     Write data to terminal and to output file with given filename.
     Here data is grades or scores.
     """
     print "-"*80 + "\n" + title
-    print build_output(state, stu_order," "),
+    print build_output(state, " "),
     print "-"*80
 
     with open(file_name,"w") as file:
-        file.write(build_output(state, stu_order,", "))
+        file.write(build_output(state, ", "))
     print file_name, "written."
     print
 
@@ -308,18 +301,22 @@ def main():
 
     # COMPUTE WEIGHTED AVERAGE SCORES AND RANKS
     wtd_score = compute_wtd_scores(score_state)
-    stu_order, wtd_score, ranks = sort_state(score_state, wtd_score)
 
-    sorted_grade_state = add_columns(grade_state, stu_order, wtd_score)
-    sorted_score_state = add_columns(score_state, stu_order, wtd_score)
+    grade_state = add_column(grade_state, "wtd_score", 0, wtd_score)
+    sorted_grade_state = sort_state(grade_state, "wtd_score")
+    sorted_grade_state = add_column(sorted_grade_state, "rank", 0, range(1, score_state.n_stu+1))
+
+    sorted_score_state = add_column(score_state, "wtd_score", 0, wtd_score)
+    sorted_score_state = sort_state(sorted_score_state, "wtd_score")
+    sorted_score_state = add_column(sorted_score_state, "rank", 0, range(1, score_state.n_stu+1))
 
     # OUTPUT RESULTS
     title = "LISTING OF ALL STUDENTS (BEST FIRST) WITH RAW GRADES:"
-    print_and_write_to_file(title, sorted_grade_state, stu_order, 
+    print_and_write_to_file(title, sorted_grade_state,
                             input_filename+".1.grades.rank.csv")
 
     title = "LISTING OF ALL STUDENTS (BEST FIRST) WITH SCALED SCORES:"
-    print_and_write_to_file(title, sorted_score_state, stu_order, 
+    print_and_write_to_file(title, sorted_score_state,
                             input_filename+".2.scores.rank.csv")
 
     if policy.DROP_POLICY != []:
@@ -329,12 +326,13 @@ def main():
         # THEN RECOMPUTE WEIGHTED SCORES AND NEW RANKS
         print "Recomputing weighted scores and ranks..."
         wtd_score = compute_wtd_scores(adjusted_score_state)
-        stu_order, wtd_score, ranks = sort_state(adjusted_score_state, wtd_score)
-       
-        adjusted_score_state = add_columns(adjusted_score_state, stu_order, wtd_score)
+        adjusted_score_state = add_column(adjusted_score_state, "wtd_score", 0, wtd_score)
+        sorted_adjusted_score_state = sort_state(adjusted_score_state, "wtd_score")
+        sorted_adjusted_score_state = add_column(sorted_adjusted_score_state,
+                                                 "rank", 0, range(1, adjusted_score_state.n_stu+1))
 
         title = "LISTING OF ALL STUDENTS (BEST FIRST) WITH SCALED AND DROPPED SCORES:"
-        print_and_write_to_file(title, adjusted_score_state, stu_order, 
+        print_and_write_to_file(title, sorted_adjusted_score_state,
                                 input_filename+".3.droppedscores.rank.csv")
         
 main()
