@@ -220,15 +220,8 @@ def normalize_scores(state, beats, stu_per_comp):
                 new_state.data[stu][col] = state.data[stu][col]
     return new_state
 
-def compute_ranks(state):
-    """
-    Compute weighted average score and new ranks.
-
-    Return new student ordering (best to worst), weighted scores per student,
-    ranks of students (1 is best).
-    """
-
-    # compute avg_score per student as weighted sum of component scores
+def compute_wtd_scores(state):
+    """  Compute weighted average scores. """
     wtd_score = [0 for stu in state.students]
     for stu in state.students:
         total = 0.0
@@ -239,12 +232,16 @@ def compute_ranks(state):
                 if not ismissing(d):
                     total += state.weights[col] * d
                     total_weight += state.weights[col]
-        wtd_score[stu] = total / total_weight
+        if total_weight > 0:
+            wtd_score[stu] = total / total_weight
+        else:
+            wtd_score[stu] = 0.0
+    return wtd_score
 
+def sort_state(state, wtd_score):
     L = sorted([ (wtd_score[stu], stu) for stu in state.students ], reverse=True)
     stu_order = [ stu for (ws, stu) in L ]
     wtd_score = [ ws for (ws, stu) in L ]
-                
     ranks = range(1, state.n_stu+1)
     return stu_order, wtd_score, ranks
 
@@ -310,7 +307,8 @@ def main():
     score_state = compute_scores(grade_state)
 
     # COMPUTE WEIGHTED AVERAGE SCORES AND RANKS
-    stu_order, wtd_score, ranks = compute_ranks(score_state)
+    wtd_score = compute_wtd_scores(score_state)
+    stu_order, wtd_score, ranks = sort_state(score_state, wtd_score)
 
     sorted_grade_state = add_columns(grade_state, stu_order, wtd_score)
     sorted_score_state = add_columns(score_state, stu_order, wtd_score)
@@ -330,8 +328,9 @@ def main():
 
         # THEN RECOMPUTE WEIGHTED SCORES AND NEW RANKS
         print "Recomputing weighted scores and ranks..."
-        stu_order, wtd_score, ranks = compute_ranks(adjusted_score_state)
-        
+        wtd_score = compute_wtd_scores(adjusted_score_state)
+        stu_order, wtd_score, ranks = sort_state(adjusted_score_state, wtd_score)
+       
         adjusted_score_state = add_columns(adjusted_score_state, stu_order, wtd_score)
 
         title = "LISTING OF ALL STUDENTS (BEST FIRST) WITH SCALED AND DROPPED SCORES:"
