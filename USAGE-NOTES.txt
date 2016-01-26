@@ -45,7 +45,7 @@ Here are the steps to take:
     You can use make_data.py to create other sample data sets.
     E.g.
 
-         pypy make_data.py 33 >test0033.csv
+         python3 make_data.py 33 >test0033.csv
 
     creates and saves a test data file for 33 students.
 
@@ -63,14 +63,14 @@ Here are the steps to take:
 
 (3) Run rank.py on the CSV file:
 
-        pypy rank.py test0005.csv
+        python3 rank.py test0005.csv
 
     There will be output printed on the console, and also three CSV files
     saved with output.
 
     Here is the output printed to the terminal for our five-student example:
 
-        11:27:39 ranking $ pypy rank.py test0005.csv
+        11:27:39 ranking $ python3 rank.py test0005.csv
         ---------------------------------------------
         -- Student ranking program (rank.py)       --
         -- Version 0.2 (1/15/16) Ronald L. Rivest  --
