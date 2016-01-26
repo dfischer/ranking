@@ -72,28 +72,6 @@ def drop(state, drop_policy=DROP_POLICY):
     new_state.data = new_scores
     return new_state
 
-def compare(x, y):
-    """
-    Return a negative, zero, or positive value if x < y, x==y, or x>y.
-    Treat MISSING or nonnumeric is small.
-    Here x, y are pairs (x0, x1), (y0, y1) e.g. (0.33, "H1") or ("--", "Q2").
-    """
-    x0, x1 = x
-    if x0 == MISSING or isnonnumeric(x0):
-        x0 = float("-inf")
-    y0, y1 = y
-    if y0 == MISSING or isnonnumeric(y0):
-        y0 = float("-inf")
-    if x0 < y0:
-        return -1
-    if x0 > y1:
-        return 1
-    if x1 < y1:
-        return -1
-    if x1 > y1:
-        return 1
-    return 0
-
 def process_drop_policy_item(names, score_row, drop_policy_item):
     """
     Return score_row after effecting given drop_policy item.
