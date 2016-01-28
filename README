@@ -1,18 +1,64 @@
 Weighted Rank-Based Scoring
 ---------------------------
+Ronald L. Rivest
+1/28/16
  
-Here we propose a simple method to rank students in a class, based on
-the students' performance on each grade component (homework, etc.)
+We describe and implement a simple method to rank students in a class,
+based on their performance on each grade component (homework, etc.)
 
+The main question we deal with is:
+
+    ``How should one normalize grades for different components, so
+      that they are on a `common scale', before we combine them
+      using a weighted averaging method?''
+
+The answer we provide is ``rank-based'':
+ 
+     If there are n students who have completed a given component,
+     then they receive rank-based scores on that component of
+
+         1/(n+1),  2/(n+1),  3/(n+1), ..., n/(n+1)
+
+     with the best student receiving the highest score.
+
+     That is, assuming their grades are distinct.  Students with
+     tied grades receive the same score, which is the average of
+     what they would have received if different scores were required.
+
+     Example:  Four students with grades on quiz #1 of
+
+               A      B     C     D
+
+               receive rank-based scores of:
+
+               4/5    3/5   2/5   1/5
+
+     Example:  The same four students with grades on quiz #2 of
+
+               A      --    C     C
+
+               (here B missed the quiz) receive rank-based scores of:
+
+               3/4    --    1.5/4   1.5/4
+
+     Example:  If the quizzes are weighted equally, then the
+               students receive overall scores that is the average
+               of the scores received on the components they did:
+
+               31/40  24/40 15.5/40 6.5/40
+
+               (Of course, one might use a different policy for handling
+               missed components.)
+ 
 We call this method "weighted rank-based scoring", since 
    -- a score for each student is computed as a weighted average
       of that student's score on each component, and 
    -- a student's score on a component is based on the student's rank
       among all students who completed that component.
-We also provide support allowing students to e.g. drop their lowest
-two homework grades.
+Our implementation also provide support allowing students to drop components
+(for example, dropping their lowest two homework grades).
 
-To illustrate, we provide a program (rank.py) that takes an input CSV
+To illustrate, we provide a python3 program (rank.py) that takes an input CSV
 file representing data like the following for a class of five students,
 with a student ID, four homeworks, two quizzes, and a final exam:
 
@@ -115,18 +161,8 @@ Discussion:
    While this was technically interesting, it had a number of deficiencies,
    including complexity.  See the subdirectory this github repository named
       old-alternative-kemeny-based-method
-   if you are interested in this.
-
-   The current method bears a closer relation to the "Borda count" method of
-   voting than to the Kemeny-Young method.  I do not feel, however, that the
-   critiques of the Borda count method in general voting situations are so
-   relevant here.  For example, Borda fails the majoritarian criterion: a
-   student who is in first place in a majority of the grade components (by
-   weight) may not be first in the final ranking, if they did very poorly
-   on the other components.  That outcome seems OK in a grading scenario,
-   even if it seems dubious in a voting scenario.  So we are not bothered
-   by critiques of Borda count for voting scenarios when we apply it
-   (or near variants of it) here in our grading scenario.
+   if you are interested in this. The current method bears a closer relation
+   to the "Borda count" method of voting than to the Kemeny-Young method.  
 
 -- I think the best approach for dealing with exceptions, etc. is
    to drop the lowest scores for homeworks, etc.  This policy is
@@ -172,4 +208,4 @@ Discussion:
    Anak Yodpinyanee for helpful discussions and feedback.
 
 Ron Rivest  
-2016-01-12
+2016-01-28
