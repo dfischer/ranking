@@ -14,6 +14,7 @@ Here are the steps to take:
     a CSV file.
 
         STU_ID ,  H1 ,  H2 ,  H3 ,  H4 ,  Q1 ,  Q2 , Final
+             0 ,  10 ,  10 ,  10 ,  10 , 100 , 100 ,   200
              0 ,   5 ,   5 ,   5 ,   5 ,  20 ,  20 ,    30
            X99 ,  -- ,   9 ,  10 ,   8 ,  -- ,  87 ,   200
            X94 ,   9 ,   9 ,   9 ,  -- , 100 ,  92 ,   200
@@ -24,6 +25,8 @@ Here are the steps to take:
     Here we have first a header line giving a name for each of the
     seven columns: a student-id, four homeworks, two quizzes, and
     a final exam.
+
+    The second line gives the maximum possible score for each component.
 
     Then we have a "weight" line, giving the weight that each
     component (column) should contribute to the final ranking.  Here

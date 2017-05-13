@@ -1,12 +1,12 @@
 # policy.py
 """ program to drop lowest grade for a student, or implement other policy """
-# Ron Rivest
-# 1/20/16
+# Ronald L. Rivest
+# 5/13/17
 
 # policy.py is used by student ranking program rank.py
 
-# All class-specific policy implementations go here.
-
+##############################################################################
+# All class-specific policy implementations go in this section between ###'s.
 # Change the following drop policy, or have rank.py
 # pass along a different policy, in order to change the dropping behavior
 # Set DROP_POLICY to the empty list to have no items dropped.
@@ -17,6 +17,10 @@ DROP_POLICY = [(2, "H1", "H2", "H3", "H4", "H5", "H6"), # drop lowest two psets
                (2, "pset1", "pset2", "pset3", "pset4", "pset5", "pset6"),
                # variant spellings?
                (1, "quiz1", "quiz2")]
+
+RANK_WEIGHT = 0.5    # Average scaled rank and scaled grades.
+
+##############################################################################
 
 MISSING = "--"
 def ismissing(x):
@@ -103,6 +107,9 @@ def print_drop_policy(names, drop_policy=DROP_POLICY):
     Print out the specified drop policy for dropping items
     from a student's record for grading purposes.
     """
+    print("Drop policies in effect for the ranking program (version 0.3):")
+
+    print()
     print("Effecting the following drop policy:")
     for drop_policy_item in drop_policy:
         k = drop_policy_item[0]

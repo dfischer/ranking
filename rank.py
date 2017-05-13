@@ -1,6 +1,7 @@
-# student ranking program (rank.py)
+# student ranking program (rank.py) 
 # Ron Rivest
-# 1/25/16
+# 1/25/16 (modified 5/13/17)
+# Version 0.3
 # python3
 
 """
@@ -23,12 +24,14 @@ class State():
     """
     The main data structure, consisting of:
         a row of n_col column names
+        a row of n_col perfect_grade values
         a row of n_col column weights  (zero weight for items not
             part of grade computation)
         a table of n_stu rows, each of n_col items, of grade or score data
     """
-    def __init__(self, names, weights, data):
+    def __init__(self, names, perfect_grades, weights, data):
         self.names = copy.copy(names)
+        self.perfect_grades = copy.copy(perfect_grades)
         self.weights = copy.copy(weights)
         self.data = copy.deepcopy(data)
 
@@ -37,13 +40,14 @@ class State():
         self.n_stu = len(data)
         self.students = list(range(self.n_stu))
 
+        assert len(names) == len(perfect_grades)
         assert len(names) == len(weights)
         for stu in self.students:
             assert len(data[stu]) == len(names)
 
     def copy(self):
         """ Return copy of this State object. """
-        return State(self.names, self.weights, self.data)
+        return State(self.names, self.perfect_grades, self.weights, self.data)
 
 ##############################################################################
 ## Beginning of ranking program
@@ -66,6 +70,7 @@ def parse_csv(rows, skiprows=0, maxgraderows=10000):
     Parse given list of rows from CSV file.
     Return a new State with
        column names,
+       column perfect_grades
        column weights
            positive numeric     --> weight for weighting in grade
            zero                 --> not part of grade
@@ -73,7 +78,8 @@ def parse_csv(rows, skiprows=0, maxgraderows=10000):
 
     The input file format is:
         'skiprows' rows to be skipped
-        a header row giving column names
+        a header row giving column names (names of components)
+        a perfect_grade row giving max possible grade for each component
         a weight row given component weights for components to be included
           (a zero, non-numeric or missing weight means to ignore this
                column for grade; it will be converted to zero internally)
@@ -83,10 +89,12 @@ def parse_csv(rows, skiprows=0, maxgraderows=10000):
     rows = rows[skiprows:]
     names = rows[0]
     names = [name.strip() for name in names]
-    weights = rows[1]
+    perfect_grades = rows[1]
+    perfect_grades = [max(0, convert_to_float_if_possible(pg, 0)) for pg in perfect_grades]
+    weights = rows[2]
     weights = [max(0, convert_to_float_if_possible(w, 0)) for w in weights]
-    grades = rows[2:maxgraderows]
-    return State(names, weights, grades)
+    grades = rows[3:maxgraderows]
+    return State(names, perfect_grades, weights, grades)
 
 # MISSING DATA (marked by sentinel value "--")
 MISSING = "--"
@@ -127,12 +135,13 @@ def convert_data(state):
     return new_state
 
 def print_grade_components(state):
-    """ Print components of grades with their weights. """
-    print("Column names (with weights for those being included in grade):")
+    """ Print components of grades with their perfect_grades and weights. """
+    print("Column names (with perfect_grades and weights for those being included in grade):")
     for col in state.columns:
         print("  %10s"%state.names[col], end=' ')
         if state.weights[col] > 0:
-            print("weight", "%g"%state.weights[col])
+            print("perfect grade: %7.3f  "%state.perfect_grades[col], end='')
+            print("weight:", "%g"%state.weights[col])
         else:
             print("------")
 
@@ -215,17 +224,20 @@ def normalize_scores(state, beats, stu_per_comp):
     one plus the number of students in the component component
     preserve missing or other data "as is"
     """
+    rank_weight = policy.RANK_WEIGHT
     new_state = state.copy()
     for stu in state.students:
         for col in state.columns:
             if state.weights[col] > 0:
                 if not ismissing(state.data[stu][col]):
-                    new_state.data[stu][col] = \
-                        beats[stu][col] / (float(stu_per_comp[col]) + 1.0)
+                    rank_value =  beats[stu][col] / (float(stu_per_comp[col]) + 1.0)
+                    grade_value = state.data[stu][col] / state.perfect_grades[col]
+                    value = rank_weight*rank_value + (1-rank_weight)*grade_value
                 else:
-                    new_state.data[stu][col] = MISSING
+                    value = MISSING
             else:
-                new_state.data[stu][col] = state.data[stu][col]
+                value = state.data[stu][col]
+            new_state.data[stu][col] = value
     return new_state
 
 def sort_state(state, key_name):
@@ -240,10 +252,11 @@ def sort_state(state, key_name):
     new_state.data = new_data
     return new_state
 
-def add_column(state, new_name, new_weight, values):
+def add_column(state, new_name, new_perfect_grade, new_weight, values):
     """ Return state with new column added. """
     new_state = state.copy()
     new_state.names.append(new_name)
+    new_state.perfect_grades.append(new_perfect_grade)
     new_state.weights.append(new_weight)
     new_state.n_col += 1
     new_state.columns = list(range(new_state.n_col))
@@ -269,7 +282,7 @@ def main():
     """ Main routine. """
     print("--------------------------------------------")
     print("-- Student ranking program (rank.py)      --")
-    print("-- Version 0.2 (1/19/16) Ronald L. Rivest --")
+    print("-- Version 0.3 (5/13/17) Ronald L. Rivest --")
     print("--------------------------------------------")
 
     # PARSE ARGUMENTS
@@ -277,8 +290,8 @@ def main():
                 description='Rank-order students based on performance.')
     parser.add_argument(\
         'input_filename',
-        help='csv file with header row, weight row, '\
-             'and then one grade row per student')
+        help='csv file with header row, perfect_grade row, weight row, '\
+        'and then one grade row per student')
     parser.add_argument('--skiprows',
                         default=0,
                         help='number of rows to skip before header row')
@@ -295,6 +308,11 @@ def main():
     print_grade_components(grade_state)
     print(grade_state.n_stu, "students")
 
+    print()
+    print("The weight of rank-based scores is", policy.RANK_WEIGHT)
+    print("The weight of grade-based scores is", 1.0-policy.RANK_WEIGHT)
+
+
     # COMPUTE SCALED SCORES AND WEIGHTED AVERAGE SCORES
     # scores has one row per student,
     # one column per original grades column
@@ -302,25 +320,25 @@ def main():
     wtd_score = policy.compute_wtd_scores(score_state)
 
     sorted_grade_state = add_column(grade_state,
-                                    "wtd_score", 0, wtd_score)
+                                    "wtd_score", 0, 0, wtd_score)
     sorted_grade_state = sort_state(sorted_grade_state,
                                     "wtd_score")
     sorted_grade_state = add_column(sorted_grade_state,
-                                    "rank", 0,
+                                    "rank", 0, 0, 
                                     list(range(1, score_state.n_stu+1)))
     sorted_score_state = add_column(score_state,
-                                    "wtd_score", 0, wtd_score)
+                                    "wtd_score", 0, 0, wtd_score)
     sorted_score_state = sort_state(sorted_score_state, "wtd_score")
     sorted_score_state = \
         add_column(sorted_score_state,
-                   "rank", 0, list(range(1, score_state.n_stu+1)))
+                   "rank", 0, 0, list(range(1, score_state.n_stu+1)))
 
     # OUTPUT RESULTS
     title = "LISTING OF ALL STUDENTS (BEST FIRST) WITH RAW GRADES:"
     print_and_write_to_file(title, sorted_grade_state,
                             input_filename+".1.grades.rank.csv")
 
-    title = "LISTING OF ALL STUDENTS (BEST FIRST) WITH SCALED SCORES:"
+    title = "LISTING OF ALL STUDENTS (BEST FIRST) WITH WEIGHTED SCALED SCORES:"
     print_and_write_to_file(title, sorted_score_state,
                             input_filename+".2.scores.rank.csv")
 
@@ -332,12 +350,12 @@ def main():
         print("Recomputing weighted scores and ranks...")
         wtd_score = policy.compute_wtd_scores(adjusted_score_state)
         adjusted_score_state = add_column(adjusted_score_state,
-                                          "wtd_score", 0, wtd_score)
+                                          "wtd_score", 0, 0, wtd_score)
         sorted_adjusted_score_state = sort_state(adjusted_score_state,
                                                  "wtd_score")
         sorted_adjusted_score_state = \
             add_column(sorted_adjusted_score_state,
-                       "rank", 0,
+                       "rank", 0, 0, 
                        list(range(1, adjusted_score_state.n_stu+1)))
 
         title = "LISTING OF ALL STUDENTS (BEST FIRST) "\

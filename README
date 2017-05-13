@@ -1,10 +1,10 @@
-Weighted Rank-Based Scoring
----------------------------
+Weighted Rank-Based and Grade-Based Scoring 
+-------------------------------------------
 Ronald L. Rivest
-1/28/16
+5/13/17 (Version 0.3)
  
-We describe and implement a simple method to rank students in a class,
-based on their performance on each grade component (homework, etc.)
+We describe and implement a method to rank students in a class, based
+on their performance on each grade component (homework, etc.)
 
 The main question we deal with is:
 
@@ -12,14 +12,15 @@ The main question we deal with is:
       that they are on a `common scale', before we combine them
       using a weighted averaging method?''
 
-The answer we provide is ``rank-based'':
+The answer we provide is a weighted combination of
+``rank-based'' and "grade-based":
  
      If there are n students who have completed a given component,
      then they receive rank-based scores on that component of
 
          1/(n+1),  2/(n+1),  3/(n+1), ..., n/(n+1)
 
-     with the best student receiving the highest score.
+     with the best student receiving the HIGHEST score.
 
      That is, assuming their grades are distinct.  Students with
      tied grades receive the same score, which is the average of
@@ -42,19 +43,30 @@ The answer we provide is ``rank-based'':
                3/4    --    1.5/4   1.5/4
 
      Example:  If the quizzes are weighted equally, then the
-               students receive overall scores that is the average
-               of the scores received on the components they did:
+               students receive rank-based scores that are the average
+               of the rank-based scores received on the components they did:
 
                31/40  24/40 15.5/40 6.5/40
 
                (Of course, one might use a different policy for handling
                missed components.)
  
-We call this method "weighted rank-based scoring", since 
-   -- a score for each student is computed as a weighted average
-      of that student's score on each component, and 
-   -- a student's score on a component is based on the student's rank
-      among all students who completed that component.
+We call the above part of the method "rank-based scoring", since 
+a student's score on a component is based on the student's rank
+among all students who completed that component.
+
+We also have "grade-based scoring", where a student's grade-based
+score on a component is equal to the student's grade on that component
+divided by the "perfect grade" (max possible grade) for that component.
+(It is presumed that all grades are nonnegative.)
+
+The student's overall score for a component is a weighted average of
+their rank-based score and their grade-based score.  See details below.
+(These weights are set in policy.py; they default to a plain average.)
+
+Then an overall score for each student is computed as a weighted average
+of that student's overall score on each component.
+
 Our implementation also provide support allowing students to drop components
 (for example, dropping their lowest two homework grades).
 
@@ -63,6 +75,7 @@ file representing data like the following for a class of five students,
 with a student ID, four homeworks, two quizzes, and a final exam:
 
       STU_ID   H1  H2   H3   H4    Q1   Q2  Final
+          0     5   5    5    5   100  100    200
           0     5   5    5    5    20   20     30
 
         X94     9   9    9   --   100   92    200
@@ -71,22 +84,24 @@ with a student ID, four homeworks, two quizzes, and a final exam:
         X78     6   8    7    8    52   56    160
         X63     3   5   --    2    63   61    143
          
-giving a header line, component weights, and student grades
-per component (with possible missing values), and produces
-a rank-ordered student listing like this:
+giving a header line, perfect_grade values for each component,
+component weights, and student grades per component (with possible
+missing values), and produces a rank-ordered student listing like
+this:
 
     LISTING OF ALL STUDENTS (BEST FIRST) WITH SCALED SCORES:
       STU_ID      H1      H2      H3      H4      Q1      Q2   Final  wtd_score  rank 
-        X94    0.800   0.667   0.600      --   0.800   0.667   0.667      0.702     1 
-        X87    0.600   0.667   0.200   0.800   0.600   0.833   0.667      0.667     2 
-        X99       --   0.667   0.800   0.500      --   0.500   0.667      0.613     3 
-        X78    0.400   0.333   0.400   0.500   0.200   0.167   0.333      0.283     4 
-        X63    0.200   0.167      --   0.200   0.400   0.333   0.167      0.265     5 
+        X94    0.850   0.783   0.750      --   0.900   0.793   0.833      0.833     1 
+        X87    0.700   0.783   0.400   0.900   0.720   0.887   0.833      0.789     2 
+        X99       --   0.783   0.900   0.650      --   0.685   0.833      0.775     3 
+        X78    0.500   0.567   0.550   0.650   0.360   0.363   0.567      0.476     4 
+        X63    0.250   0.333      --   0.200   0.515   0.472   0.441      0.434     5 
 
-Here each grade is converted to a rank-based score, and the (weighted)
-scores are averaged for each student.  The students are then sorted
-into decreasing order by weighted ranked-base score; the last column
-("rank") gives the student's rank in the class.
+Here each grade is converted to a weighted average of their rank-based
+score and grade-based scores, and the (weighted) scores are averaged
+for each student.  The students are then sorted into decreasing order
+by weighted ranked-base score; the last column ("rank") gives the
+student's rank in the class.
 
 The program also enables following a policy of dropping lowest components
 in a category.  For example:
@@ -98,11 +113,11 @@ in a category.  For example:
     --------------------------------------------------------------------------------
      LISTING OF ALL STUDENTS (BEST FIRST) WITH SCALED AND DROPPED SCORES:
       STU_ID      H1      H2      H3      H4      Q1      Q2   Final  wtd_score  rank 
-        X87       --   0.667      --   0.800      --   0.833   0.667      0.733     1 
-        X94    0.800   0.667      --      --   0.800      --   0.667      0.722     2 
-        X99       --   0.667   0.800      --      --   0.500   0.667      0.622     3 
-        X78       --      --   0.400   0.500   0.200      --   0.333      0.308     4 
-        X63    0.200      --      --   0.200   0.400      --   0.167      0.250     5 
+         X94   0.850   0.783      --      --   0.900      --   0.833      0.853     1 
+         X87      --   0.783      --   0.900      --   0.887   0.833      0.852     2 
+         X99      --   0.783   0.900      --      --   0.685   0.833      0.785     3 
+         X78      --   0.567      --   0.650      --   0.363   0.567      0.506     4
+         X63   0.250   0.333      --      --   0.515      --   0.441      0.441,    5 
 
 The method used here works as follows:
 
@@ -128,8 +143,24 @@ The method used here works as follows:
       If all ranks are distinct, then the scaled ranks are:
              1/(m+1)   2/(m+1)   3/(m+1)  ...   m/(m+1)
 
-  (3) The weighted average score is then computed for each student, and
-      the students are sorted into order of decreasing score.
+  (3) In parallel with the rank-based scoring, which gives a rank-based
+      score in the interval [0,1] for each student on each component, we also
+      compute a grade-based score for each student for each component,
+      derived by dividing the student score for that component by the
+      perfect grade (i.e., max possible score) for that component.
+      
+  (4) We compute an "overall score" for each student for each component
+      as a weighted average of their rank-based score and their grade-based score
+      for that component
+        overall_score = rank_weight*rank_based_score +
+                        (1-rank_weight)*grade_based_score
+      The value of rank_weight defaults to 0.5, but is changeable in
+      the file policy.py
+
+  (5) Then an overall score for the student is computed as a weighted
+      average of the student's overall score on each component.
+
+  (6) The students are sorted into order of decreasing overall score.
 
       Since some scores may be missing, the relevant weights for that
       student are normalized to sum to 1 before the weighted sum is
@@ -140,9 +171,10 @@ See the included files for more documentation, code, etc.:
     README                -- this file
     USAGE-NOTES.txt       -- discussion on how to use rank.py
 
-    rank.py               -- main program
-    make_data.py          -- generates test CSV files
+    rank.py               -- main program (python3)
+    make_data.py          -- generates test CSV files (python2)
     policy.py             -- if you want to e.g. drop lowest homework scores
+                             or set rank_weight to something other than 0.5
 
     testnnnn.csv                        -- input CSV test data file with nnnn students
 
@@ -156,6 +188,14 @@ See the included files for more documentation, code, etc.:
     (Some of the test data is in the subfolder "examples".)
 
 Discussion:
+
+-- Version 0.2 was based solely on rank-based scoring.  Version 0.3
+   (5/13/17) allows the overall student score to be a weighted average
+   (defaulting to just a plain average) of the rank-based score and
+   the grade-based score.  Setting the policy parameter RANK_WEIGHT
+   in policy.py to 1.0 makes the program equivalent to version 0.2
+   (all rank-based scoring).  RANK_WEIGHT should be between 0.0 (all
+   grade-based scoring) and 1.0 (all rank-based scoring)
 
 -- An earlier version was based on the use of Kemeny-Young score rankings.
    While this was technically interesting, it had a number of deficiencies,
@@ -208,4 +248,4 @@ Discussion:
    Anak Yodpinyanee for helpful discussions and feedback.
 
 Ron Rivest  
-2016-01-28
+2016-01-28 (rev 2017-05-13)

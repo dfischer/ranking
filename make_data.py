@@ -1,6 +1,7 @@
 # routine to make test data for GBV (Grading By Voting) program
 # Ronald L. Rivest
-# December 26, 2015
+# 5/13/17
+# python2
 
 """
 Minor note: having "ID" as the contents of row 0, col 0 
@@ -60,6 +61,9 @@ def main():
         name_row.append("Q"+str(i+1))
     name_row.append("Final")
 
+    # create perfect_grades row
+    perfect_grades_row = [0]*n_IDs + [5]*n_homeworks + [100]*n_quizzes + [200]*n_finals
+
     # create weight row
     weight_row = [0]*n_IDs + [5]*n_homeworks + [20]*n_quizzes + [30]*n_finals
 
@@ -87,10 +91,11 @@ def main():
             row.append(rand_score(mu, max_final_score, frac_final_missing))
         data_rows.append(row)
 
+    assert len(name_row) == len(perfect_grades_row)
     assert len(name_row) == len(weight_row)
     assert len(weight_row) == len(data_rows[0])
 
-    all_data = [name_row] + [weight_row] + data_rows                                     
+    all_data = [name_row] + [perfect_grades_row] + [weight_row] + data_rows                                     
 
     column_widths = [0]*len(name_row)
 
