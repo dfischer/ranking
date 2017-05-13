@@ -1,16 +1,17 @@
 Notes on using the rank.py (student ranking) program.
 Ronald L. Rivest
-January 16, 2016
+May 13, 2017
 ------------------------------------------------------
 
-We assume you have grade data for the students in a class, and a
+We assume you have grade data for the students in a class, a
+max possible grade for each grading component, and a
 "weight" for each graded component, and that you wish to produce a
 listing of the students in order of decreasing overall performance.
 
 Here are the steps to take:
 
-(1) Create a spreadsheet with a header line, a weight line,
-    and a number of student grades lines; save it as
+(1) Create a spreadsheet with a header line, a perfect_grades line,
+    a weight line, and a number of student grades lines; save it as
     a CSV file.
 
         STU_ID ,  H1 ,  H2 ,  H3 ,  H4 ,  Q1 ,  Q2 , Final
@@ -26,7 +27,7 @@ Here are the steps to take:
     seven columns: a student-id, four homeworks, two quizzes, and
     a final exam.
 
-    The second line gives the maximum possible score for each component.
+    The second line gives the maximum possible grade for each component.
 
     Then we have a "weight" line, giving the weight that each
     component (column) should contribute to the final ranking.  Here
