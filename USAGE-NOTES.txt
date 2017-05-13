@@ -74,58 +74,63 @@ Here are the steps to take:
 
     Here is the output printed to the terminal for our five-student example:
 
-        11:27:39 ranking $ python3 rank.py test0005.csv
-        ---------------------------------------------
-        -- Student ranking program (rank.py)       --
-        -- Version 0.2 (1/15/16) Ronald L. Rivest  --
-        ---------------------------------------------
-        Reading input file: test0005.csv
-        Column names (with weights for those being included in grade):
-              STU_ID ------
-                  H1 weight 5
-                  H2 weight 5
-                  H3 weight 5
-                  H4 weight 5
-                  Q1 weight 20
-                  Q2 weight 20
-               Final weight 30
-        5 students
-        --------------------------------------------------------------------------------
-        LISTING OF ALL STUDENTS (BEST FIRST) WITH RAW GRADES:
-          STU_ID   H1  H2   H3   H4    Q1   Q2  Final  wtd_score  rank 
-            X94     9   9    9   --   100   92    200      0.702     1 
-            X87     8   9    6   10    84   94    200      0.667     2 
-            X99    --   9   10    8    --   87    200      0.613     3 
-            X78     6   8    7    8    52   56    160      0.283     4 
-            X63     3   5   --    2    63   61    143      0.265     5 
-        --------------------------------------------------------------------------------
-        test0005.csv.1.grades.rank.csv written.
+          $ python3 rank.py test0005.csv
+          --------------------------------------------
+          -- Student ranking program (rank.py)      --
+          -- Version 0.3 (5/13/17) Ronald L. Rivest --
+          --------------------------------------------
+          Reading input file: test0005.csv
+          Column names (with perfect_grades and weights for those being included in grade):
+          STU_ID ------
+          H1 perfect grade:  10.000  weight: 5
+          H2 perfect grade:  10.000  weight: 5
+          H3 perfect grade:  10.000  weight: 5
+          H4 perfect grade:  10.000  weight: 5
+          Q1 perfect grade: 100.000  weight: 20
+          Q2 perfect grade: 100.000  weight: 20
+          Final perfect grade: 200.000  weight: 30
+          5 students
 
-        --------------------------------------------------------------------------------
-        LISTING OF ALL STUDENTS (BEST FIRST) WITH SCALED SCORES:
-          STU_ID      H1      H2      H3      H4      Q1      Q2   Final  wtd_score  rank 
-            X94    0.800   0.667   0.600      --   0.800   0.667   0.667      0.702     1 
-            X87    0.600   0.667   0.200   0.800   0.600   0.833   0.667      0.667     2 
-            X99       --   0.667   0.800   0.500      --   0.500   0.667      0.613     3 
-            X78    0.400   0.333   0.400   0.500   0.200   0.167   0.333      0.283     4 
-            X63    0.200   0.167      --   0.200   0.400   0.333   0.167      0.265     5 
-        --------------------------------------------------------------------------------
-        test0005.csv.2.scores.rank.csv written.
+          The weight of rank-based scores is 0.5
+          The weight of grade-based scores is 0.5
+          --------------------------------------------------------------------------------
+          LISTING OF ALL STUDENTS (BEST FIRST) WITH RAW GRADES:
+          STU_ID  H1 H2  H3  H4   Q1  Q2 Final wtd_score rank 
+          X94    9  9   9  --  100  92   200     0.833    1 
+          X87    8  9   6  10   84  94   200     0.789    2 
+          X99   --  9  10   8   --  87   200     0.775    3 
+          X78    6  8   7   8   52  56   160     0.476    4 
+          X63    3  5  --   2   63  61   143     0.434    5 
+          --------------------------------------------------------------------------------
+          test0005.csv.1.grades.rank.csv written.
 
-        Effecting the following drop policy:
-            Dropping lowest 2 from: H1 H2 H3 H4
-            Dropping lowest 1 from: Q1 Q2
-        Recomputing weighted scores and ranks...
-        --------------------------------------------------------------------------------
-         LISTING OF ALL STUDENTS (BEST FIRST) WITH SCALED AND DROPPED SCORES:
-          STU_ID      H1      H2      H3      H4      Q1      Q2   Final  wtd_score  rank 
-            X87       --   0.667      --   0.800      --   0.833   0.667      0.733     1 
-            X94    0.800   0.667      --      --   0.800      --   0.667      0.722     2 
-            X99       --   0.667   0.800      --      --   0.500   0.667      0.622     3 
-            X78       --      --   0.400   0.500   0.200      --   0.333      0.308     4 
-            X63    0.200      --      --   0.200   0.400      --   0.167      0.250     5 
-        --------------------------------------------------------------------------------
-        test0005.csv.3.droppedscores.rank.csv written.
+          --------------------------------------------------------------------------------
+          LISTING OF ALL STUDENTS (BEST FIRST) WITH WEIGHTED SCALED SCORES:
+          STU_ID     H1     H2     H3     H4     Q1     Q2  Final wtd_score rank 
+          X94   0.850  0.783  0.750     --  0.900  0.793  0.833     0.833    1 
+          X87   0.700  0.783  0.400  0.900  0.720  0.887  0.833     0.789    2 
+          X99      --  0.783  0.900  0.650     --  0.685  0.833     0.775    3 
+          X78   0.500  0.567  0.550  0.650  0.360  0.363  0.567     0.476    4 
+          X63   0.250  0.333     --  0.200  0.515  0.472  0.441     0.434    5 
+          --------------------------------------------------------------------------------
+          test0005.csv.2.scores.rank.csv written.
+
+          Drop policies in effect for the ranking program (version 0.3):
+
+          Effecting the following drop policy:
+          Dropping lowest 2 from: H1 H2 H3 H4 
+          Dropping lowest 1 from: Q1 Q2 
+          Recomputing weighted scores and ranks...
+          --------------------------------------------------------------------------------
+          LISTING OF ALL STUDENTS (BEST FIRST) WITH SCALED AND DROPPED SCORES:
+          STU_ID     H1     H2     H3     H4     Q1     Q2  Final wtd_score rank 
+          X94   0.850  0.783     --     --  0.900     --  0.833     0.853    1 
+          X87      --  0.783     --  0.900     --  0.887  0.833     0.852    2 
+          X99      --  0.783  0.900     --     --  0.685  0.833     0.785    3 
+          X78      --  0.567     --  0.650     --  0.363  0.567     0.506    4 
+          X63   0.250  0.333     --     --  0.515     --  0.441     0.441    5 
+          --------------------------------------------------------------------------------
+          test0005.csv.3.droppedscores.rank.csv written.
 
 
 The above small example is merely illustrative; our rank-based scoring
